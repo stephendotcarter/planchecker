@@ -1,0 +1,27 @@
+
+
+                                                                   QUERY PLAN
+-------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 2:1  (slice1; segments: 2)  (cost=0.00..431.00 rows=1 width=8)
+   Rows out:  5500 rows at destination with 1.259 ms to first row, 4.121 ms to end, start offset by 0.274 ms.
+   ->  Sequence  (cost=0.00..431.00 rows=1 width=8)
+         Rows out:  Avg 2750.0 rows x 2 workers.  Max 2752 rows (seg0) with 0.043 ms to first row, 0.597 ms to end, start offset by 40 ms.
+         ->  Partition Selector for sales (dynamic scan id: 1)  (cost=10.00..100.00 rows=50 width=4)
+               Filter: year = 2015
+               Partitions selected:  1 (out of 100)
+               Rows out:  0 rows (seg0) with 0.003 ms to end, start offset by 40 ms.
+         ->  Dynamic Table Scan on sales (dynamic scan id: 1)  (cost=0.00..431.00 rows=1 width=8)
+               Filter: year = 2015
+               Rows out:  Avg 2750.0 rows x 2 workers.  Max 2752 rows (seg0) with 0.039 ms to first row, 0.353 ms to end, start offset by 40 ms.
+               Partitions scanned:  Avg 1.0 (out of 100) x 2 workers.  Max 1 parts (seg0).
+ Slice statistics:
+   (slice0)    Executor memory: 267K bytes.
+   (slice1)    Executor memory: 187K bytes avg x 2 workers, 187K bytes max (seg0).
+ Statement statistics:
+   Memory used: 128000K bytes
+ Settings:  optimizer=on
+ Optimizer status: PQO version 1.620
+ Total runtime: 5.095 ms
+(20 rows)
+
+

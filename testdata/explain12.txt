@@ -1,0 +1,109 @@
+analytics=> EXPLAIN ANALYZE SELECT
+analytics->         HD.recorded_date                        AS  recorded_date               
+analytics-> ,       HD.str_cd                               AS  str_cd                      
+analytics-> ,       DT.prd_cd_1                             AS  prd_cd_1                    
+analytics-> ,       MAX(DT.prd_name_1_kanji)                AS  prd_name_1_kanji            
+analytics-> ,       HD.card_no                              AS  card_no                     
+analytics-> ,       SUM(DT.nebiki_go_amt_zeinuki)           AS  sls_amt                     
+analytics-> ,       1                                       AS  raiten_count                
+analytics-> ,       COUNT(DISTINCT HD.tori_no)              AS  purch_count                 
+analytics-> ,       SUM(DT.hanbai_num)                      AS  purch_num                   
+analytics-> ,       SUM(HD.hanbai_tot_amt_zeinuki)          AS  hanbai_tot_amt_zeinuki      
+analytics-> FROM
+analytics->         trn_purch_header_1_prt_p201601        HD
+analytics-> ,       trn_purch_detail_1_prt_p201601        DT
+analytics-> ,       mst_cal                 CA
+analytics-> WHERE
+analytics->         CA.ymd                  = '20160121'
+analytics-> AND     HD.recorded_date        = CA.ymd
+analytics-> AND     DT.recorded_date        = CA.ymd
+analytics-> AND     HD.str_cd               = DT.str_cd
+analytics-> AND     HD.register_no          = DT.register_no
+analytics-> AND     HD.tori_no              = DT.tori_no
+analytics-> AND     HD.recorded_date        = DT.recorded_date
+analytics-> AND     HD.recorded_time        = DT.recorded_time
+analytics-> GROUP BY
+analytics->         HD.recorded_date                
+analytics-> ,       HD.str_cd                       
+analytics-> ,       DT.prd_cd_1                     
+analytics-> ,       HD.card_no                      
+analytics-> ;
+                                                                                                           QUERY PLAN                                        
+                                                                   
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------
+ Gather Motion 40:1  (slice6; segments: 40)  (cost=2027241.25..2027242.34 rows=19 width=342)
+   Rows out:  2844656 rows at destination with 8157 ms to first row, 9233 ms to end, start offset by 356 ms.
+   ->  GroupAggregate  (cost=2027241.25..2027242.34 rows=1 width=342)
+         Group By: hd.recorded_date, hd.str_cd, dt.prd_cd_1, hd.card_no
+         Rows out:  Avg 71116.4 rows x 40 workers.  Max 71617 rows (seg7) with 8100 ms to first row, 8304 ms to end, start offset by 415 ms.
+         Executor memory:  8K bytes avg, 8K bytes max (seg0).
+         ->  Sort  (cost=2027241.25..2027241.29 rows=1 width=338)
+               Sort Key: hd.recorded_date, hd.str_cd, dt.prd_cd_1, hd.card_no
+               Rows out:  Avg 71449.2 rows x 40 workers.  Max 71943 rows (seg7) with 8100 ms to first row, 8118 ms to end, start offset by 415 ms.
+               Executor memory:  35833K bytes avg, 35833K bytes max (seg0).
+               Work_mem used:  35833K bytes avg, 35833K bytes max (seg0). Workfile: (0 spilling, 0 reused)
+               ->  Redistribute Motion 40:40  (slice5; segments: 40)  (cost=2027239.56..2027240.84 rows=1 width=338)
+                     Hash Key: hd.recorded_date, hd.str_cd, dt.prd_cd_1, hd.card_no
+                     Rows out:  Avg 71449.2 rows x 40 workers at destination.  Max 71943 rows (seg7) with 5502 ms to first row, 7908 ms to end, start offset by 415 ms.
+                     ->  GroupAggregate  (cost=2027239.56..2027240.46 rows=1 width=338)
+                           Group By: hd.recorded_date, hd.str_cd, dt.prd_cd_1, hd.card_no
+                           Rows out:  Avg 142898.5 rows x 20 workers.  Max 156211 rows (seg9) with 5567 ms to first row, 7726 ms to end, start offset by 394 ms.
+                           Executor memory:  4579457K bytes avg, 5006083K bytes max (seg9).
+                           Work_mem used:  33K bytes avg, 33K bytes max (seg1).
+                           ->  Sort  (cost=2027239.56..2027239.61 rows=1 width=120)
+                                 Sort Key: hd.recorded_date, hd.str_cd, dt.prd_cd_1, hd.card_no
+                                 Rows out:  Avg 149826.4 rows x 20 workers.  Max 163647 rows (seg9) with 5567 ms to first row, 5637 ms to end, start offset by 394 ms.
+                                 Executor memory:  31573K bytes avg, 63481K bytes max (seg1).
+                                 Work_mem used:  31573K bytes avg, 63481K bytes max (seg1). Workfile: (0 spilling, 0 reused)
+                                 ->  Redistribute Motion 40:40  (slice4; segments: 40)  (cost=230220.01..2027239.15 rows=1 width=120)
+                                       Hash Key: hd.tori_no
+                                       Rows out:  Avg 149826.4 rows x 20 workers at destination.  Max 163647 rows (seg9) with 1401 ms to first row, 4870 ms to end, start offset by 395 ms.
+                                       ->  Nested Loop  (cost=230220.01..2027238.77 rows=1 width=120)
+                                             Rows out:  Avg 74913.2 rows x 40 workers.  Max 77283 rows (seg36) with 1267 ms to first row, 4926 ms to end, start offset by 405 ms.
+                                             ->  Hash Join  (cost=229892.44..2026895.91 rows=1 width=124)
+                                                   Hash Cond: dt.str_cd::text = hd.str_cd::text AND dt.register_no::text = hd.register_no::text AND dt.tori_no::text = hd.tori_no::text AND dt.recorded_time = hd.recorded_time
+                                                   Rows out:  Avg 74913.2 rows x 40 workers.  Max 77283 rows (seg36) with 1225 ms to first row, 4760 ms to end, start offset by 447 ms.
+                                                   Executor memory:  980K bytes avg, 998K bytes max (seg33).
+                                                   Work_mem used:  980K bytes avg, 998K bytes max (seg33). Workfile: (0 spilling, 0 reused)
+                                                   (seg36)  Hash chain length 1.0 avg, 3 max, using 10449 of 524341 buckets.
+                                                   ->  Redistribute Motion 40:40  (slice1; segments: 40)  (cost=0.00..1791313.00 rows=14226 width=112)
+                                                         Hash Key: dt.recorded_time, dt.tori_no::text, dt.register_no::text, dt.str_cd::text
+                                                         Rows out:  Avg 74913.2 rows x 40 workers at destination.  Max 77283 rows (seg36) with 683 ms to first row, 3930 ms to end, start offset by 989 ms.
+                                                         ->  Parquet table Scan on trn_purch_detail_1_prt_p201601 dt  (cost=0.00..1779932.52 rows=14226 width=112)
+                                                               Filter: '2016-01-21'::date = recorded_date AND recorded_date = '2016-01-21'::date
+                                                               Rows out:  Avg 74913.2 rows x 40 workers.  Max 75377 rows (seg33) with 1722 ms to first row, 4655 ms to end, start offset by 410 ms.
+                                                   ->  Hash  (cost=228506.44..228506.44 rows=1733 width=47)
+                                                         Rows in:  Avg 10533.7 rows x 40 workers.  Max 10734 rows (seg33) with 521 ms to end, start offset by 468 ms.
+                                                         ->  Redistribute Motion 40:40  (slice2; segments: 40)  (cost=0.00..228506.44 rows=1733 width=47)
+                                                               Hash Key: hd.recorded_time, hd.tori_no::text, hd.register_no::text, hd.str_cd::text
+                                                               Rows out:  Avg 10533.7 rows x 40 workers at destination.  Max 10734 rows (seg33) with 8.985 ms to first row, 466 ms to end, start offset by 468 ms.
+                                                               ->  Parquet table Scan on trn_purch_header_1_prt_p201601 hd  (cost=0.00..227120.44 rows=1733 width=47)
+                                                                     Filter: '2016-01-21'::date = recorded_date AND recorded_date = '2016-01-21'::date
+                                                                     Rows out:  Avg 10533.7 rows x 40 workers.  Max 10736 rows (seg8) with 195 ms to first row, 426 ms to end, start offset by 388 ms.
+                                             ->  Materialize  (cost=327.57..327.97 rows=1 width=4)
+                                                   Rows out:  Avg 74914.2 rows x 40 workers.  Max 77284 rows (seg36) with 42 ms to first row, 106 ms to end of 77284 scans, start offset by 5588 ms.
+                                                   ->  Broadcast Motion 40:40  (slice3; segments: 40)  (cost=0.00..327.53 rows=1 width=4)
+                                                         Rows out:  Avg 1.0 rows x 40 workers at destination.  Max 1 rows (seg0) with 37 ms to first row, 53 ms to end, start offset by 393 ms.
+                                                         ->  Parquet table Scan on mst_cal ca  (cost=0.00..327.12 rows=1 width=4)
+                                                               Filter: ymd = '2016-01-21'::date AND '2016-01-21'::date = ymd
+                                                               Rows out:  1 rows (seg4) with 11 ms to end, start offset by 419 ms.
+ Slice statistics:
+   (slice0)    Executor memory: 870K bytes.
+   (slice1)    Executor memory: 9692K bytes avg x 40 workers, 9701K bytes max (seg21).
+   (slice2)    Executor memory: 7698K bytes avg x 40 workers, 7703K bytes max (seg38).
+   (slice3)    Executor memory: 1519K bytes avg x 40 workers, 1551K bytes max (seg4).
+   (slice4)    Executor memory: 11733K bytes avg x 40 workers, 11733K bytes max (seg0).  Work_mem: 998K bytes max.
+   (slice5)    Executor memory: 32827K bytes avg x 40 workers, 64965K bytes max (seg1).  Work_mem: 63481K bytes max.
+   (slice6)    Executor memory: 36690K bytes avg x 40 workers, 36690K bytes max (seg0).  Work_mem: 35833K bytes max.
+ Statement statistics:
+   Memory used: 1058134K bytes
+ Settings:  optimizer=off
+ Optimizer status: legacy query optimizer
+ Total runtime: 9800.029 ms
+(69 rows)
+
+Time: 9808.836 ms
+analytics=> 
+analytics=> 
+ 

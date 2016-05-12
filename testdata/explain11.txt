@@ -1,0 +1,105 @@
+analytics=> EXPLAIN ANALYZE SELECT
+analytics->         HD.recorded_date                        AS  recorded_date               
+analytics-> ,       HD.str_cd                               AS  str_cd                      
+analytics-> ,       DT.prd_cd_1                             AS  prd_cd_1                    
+analytics-> ,       MAX(DT.prd_name_1_kanji)                AS  prd_name_1_kanji            
+analytics-> ,       HD.card_no                              AS  card_no                     
+analytics-> ,       SUM(DT.nebiki_go_amt_zeinuki)           AS  sls_amt                     
+analytics-> ,       1                                       AS  raiten_count                
+analytics-> ,       COUNT(DISTINCT HD.tori_no)              AS  purch_count                 
+analytics-> ,       SUM(DT.hanbai_num)                      AS  purch_num                   
+analytics-> ,       SUM(HD.hanbai_tot_amt_zeinuki)          AS  hanbai_tot_amt_zeinuki      
+analytics-> FROM
+analytics->         trn_purch_header_1_prt_p201601        HD
+analytics-> ,       trn_purch_detail_1_prt_p201601        DT
+analytics-> ,       mst_cal                 CA
+analytics-> WHERE
+analytics->         CA.ymd                  = '20160121'
+analytics-> AND     HD.recorded_date        = CA.ymd
+analytics-> AND     DT.recorded_date        = CA.ymd
+analytics-> AND     HD.str_cd               = DT.str_cd
+analytics-> AND     HD.register_no          = DT.register_no
+analytics-> AND     HD.tori_no              = DT.tori_no
+analytics-> AND     HD.recorded_date        = DT.recorded_date
+analytics-> AND     HD.recorded_time        = DT.recorded_time
+analytics-> GROUP BY
+analytics->         HD.recorded_date                
+analytics-> ,       HD.str_cd                       
+analytics-> ,       DT.prd_cd_1                     
+analytics-> ,       HD.card_no                      
+analytics-> ;
+                                                                                                                                                             
+                                                                                                                                          QUERY PLAN         
+                                                                                                                                                             
+                                                                                                                                  
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 40:1  (slice5; segments: 40)  (cost=0.00..31487.35 rows=127315369 width=72)
+   Rows out:  2844656 rows at destination with 3819 ms to first row, 4808 ms to end, start offset by 901 ms.
+   ->  Result  (cost=0.00..10271.01 rows=3182885 width=72)
+         Rows out:  Avg 71116.4 rows x 40 workers.  Max 71617 rows (seg7) with 3792 ms to first row, 3924 ms to end, start offset by 947 ms.
+         ->  HashAggregate  (cost=0.00..10041.84 rows=3182885 width=72)
+               Group By: trn_purch_header_1_prt_p201601.recorded_date, trn_purch_header_1_prt_p201601.str_cd, trn_purch_detail_1_prt_p201601.prd_cd_1, trn_purch_header_1_prt_p201601.card_no
+               Rows out:  Avg 71116.4 rows x 40 workers.  Max 71617 rows (seg7) with 3792 ms to first row, 3895 ms to end, start offset by 947 ms.
+               Executor memory:  33589K bytes avg, 33684K bytes max (seg6).
+               ->  HashAggregate  (cost=0.00..8282.83 rows=3182885 width=70)
+                     Group By: trn_purch_header_1_prt_p201601.recorded_date, trn_purch_header_1_prt_p201601.str_cd, trn_purch_detail_1_prt_p201601.prd_cd_1, trn_purch_header_1_prt_p201601.card_no, trn_purch_header_1_prt_p201601.tori_no
+                     Rows out:  Avg 71467.9 rows x 40 workers.  Max 71955 rows (seg7) with 3504 ms to first row, 3571 ms to end, start offset by 1040 ms.
+                     Executor memory:  24899K bytes avg, 24979K bytes max (seg6).
+                     ->  Redistribute Motion 40:40  (slice4; segments: 40)  (cost=0.00..6123.34 rows=3182885 width=70)
+                           Hash Key: trn_purch_header_1_prt_p201601.recorded_date, trn_purch_header_1_prt_p201601.str_cd, trn_purch_detail_1_prt_p201601.prd_cd_1, trn_purch_header_1_prt_p201601.card_no
+                           Rows out:  Avg 71467.9 rows x 40 workers at destination.  Max 71955 rows (seg7) with 2917 ms to first row, 3215 ms to end, start offset by 1051 ms.
+                           ->  Result  (cost=0.00..5425.97 rows=3182885 width=70)
+                                 Rows out:  Avg 71467.9 rows x 40 workers.  Max 73593 rows (seg5) with 3017 ms to first row, 3291 ms to end, start offset by 954 ms.
+                                 ->  HashAggregate  (cost=0.00..5425.97 rows=3182885 width=70)
+                                       Group By: trn_purch_header_1_prt_p201601.recorded_date, trn_purch_header_1_prt_p201601.str_cd, trn_purch_detail_1_prt_p201601.prd_cd_1, trn_purch_header_1_prt_p201601.card_no, trn_purch_header_1_prt_p201601.tori_no
+                                       Rows out:  Avg 71467.9 rows x 40 workers.  Max 73593 rows (seg5) with 3017 ms to first row, 3254 ms to end, start offset by 954 ms.
+                                       Executor memory:  25029K bytes avg, 25492K bytes max (seg5).
+                                       ->  Hash Join  (cost=0.00..3266.48 rows=3182885 width=120)
+                                             Hash Cond: trn_purch_detail_1_prt_p201601.str_cd::text = trn_purch_header_1_prt_p201601.str_cd::text AND trn_purch_detail_1_prt_p201601.register_no::text = trn_purch_header_1_prt_p201601.register_no::text AND trn_purch_detail_1_prt_p201601.tori_no::text = trn_purch_header_1_prt_p201601.tori_no::text AND trn_purch_detail_1_prt_p201601.recorded_date = trn_purch_header_1_prt_p201601.recorded_date AND trn_purch_detail_1_prt_p201601.recorded_date = mst_cal.ymd AND trn_purch_detail_1_prt_p201601.recorded_time = trn_purch_header_1_prt_p201601.recorded_time
+                                             Rows out:  Avg 74913.2 rows x 40 workers.  Max 77092 rows (seg5) with 790 ms to first row, 2655 ms to end, start offset by 967 ms.
+                                             Executor memory:  906K bytes avg, 931K bytes max (seg5).
+                                             Work_mem used:  906K bytes avg, 931K bytes max (seg5). Workfile: (0 spilling, 0 reused)
+                                             (seg5)   Hash chain length 1.0 avg, 3 max, using 10649 of 524341 buckets.
+                                             ->  Redistribute Motion 40:40  (slice1; segments: 40)  (cost=0.00..931.36 rows=78311 width=112)
+                                                   Hash Key: trn_purch_detail_1_prt_p201601.str_cd::text, trn_purch_detail_1_prt_p201601.register_no::text, trn_purch_detail_1_prt_p201601.tori_no::text, trn_purch_detail_1_prt_p201601.recorded_date, trn_purch_detail_1_prt_p201601.recorded_date, trn_purch_detail_1_prt_p201601.recorded_time
+                                                   Rows out:  Avg 74913.2 rows x 40 workers at destination.  Max 77092 rows (seg5) with 100 ms to first row, 1709 ms to end, start offset by 1657 ms.
+                                                   ->  Table Scan on trn_purch_detail_1_prt_p201601  (cost=0.00..903.91 rows=78311 width=112)
+                                                         Filter: recorded_date = '2016-01-21'::date
+                                                         Rows out:  Avg 74913.2 rows x 40 workers.  Max 75377 rows (seg33) with 1011 ms to first row, 2592 ms to end, start offset by 952 ms.
+                                             ->  Hash  (cost=900.76..900.76 rows=10159 width=51)
+                                                   Rows in:  Avg 10533.7 rows x 40 workers.  Max 10832 rows (seg5) with 675 ms to end, start offset by 982 ms.
+                                                   ->  Redistribute Motion 40:40  (slice3; segments: 40)  (cost=0.00..900.76 rows=10159 width=51)
+                                                         Hash Key: trn_purch_header_1_prt_p201601.str_cd::text, trn_purch_header_1_prt_p201601.register_no::text, trn_purch_header_1_prt_p201601.tori_no::text, trn_purch_header_1_prt_p201601.recorded_date, mst_cal.ymd, trn_purch_header_1_prt_p201601.recorded_time
+                                                         Rows out:  Avg 10533.7 rows x 40 workers at destination.  Max 10832 rows (seg5) with 216 ms to first row, 667 ms to end, start offset by 982 ms.
+                                                         ->  Hash Join  (cost=0.00..899.13 rows=10159 width=51)
+                                                               Hash Cond: trn_purch_header_1_prt_p201601.recorded_date = mst_cal.ymd
+                                                               Rows out:  Avg 10533.7 rows x 40 workers.  Max 10736 rows (seg8) with 254 ms to first row, 510 ms to end, start offset by 950 ms.
+                                                               Executor memory:  1K bytes avg, 1K bytes max (seg0).
+                                                               Work_mem used:  1K bytes avg, 1K bytes max (seg0). Workfile: (0 spilling, 0 reused)
+                                                               (seg8)   Hash chain length 1.0 avg, 1 max, using 1 of 2097211 buckets.
+                                                               ->  Table Scan on trn_purch_header_1_prt_p201601  (cost=0.00..464.12 rows=10158 width=47)
+                                                                     Filter: recorded_date = '2016-01-21'::date
+                                                                     Rows out:  Avg 10533.7 rows x 40 workers.  Max 10736 rows (seg8) with 143 ms to first row, 376 ms to end, start offset by 1061 ms.
+                                                               ->  Hash  (cost=431.15..431.15 rows=2 width=4)
+                                                                     Rows in:  Avg 1.0 rows x 40 workers.  Max 1 rows (seg0) with 5.488 ms to end, start offset by 1048 ms.
+                                                                     ->  Broadcast Motion 40:40  (slice2; segments: 40)  (cost=0.00..431.15 rows=2 width=4)
+                                                                           Rows out:  Avg 1.0 rows x 40 workers at destination.  Max 1 rows (seg0) with 0.040 ms to first row, 5.469 ms to end, start offset by 1048 ms.
+                                                                           ->  Table Scan on mst_cal  (cost=0.00..431.15 rows=1 width=4)
+                                                                                 Filter: ymd >= '2016-01-01'::date AND ymd <= '2016-01-31'::date AND ymd = '2016-01-21'::date
+                                                                                 Rows out:  1 rows (seg4) with 52 ms to end, start offset by 939 ms.
+ Slice statistics:
+   (slice0)    Executor memory: 573K bytes.
+   (slice1)    Executor memory: 5886K bytes avg x 40 workers, 5892K bytes max (seg0).
+   (slice2)    Executor memory: 987K bytes avg x 40 workers, 987K bytes max (seg0).
+   (slice3)    Executor memory: 40202K bytes avg x 40 workers, 40207K bytes max (seg38).  Work_mem: 1K bytes max.
+   (slice4)    Executor memory: 36158K bytes avg x 40 workers, 36613K bytes max (seg5).  Work_mem: 931K bytes max.
+   (slice5)    Executor memory: 58991K bytes avg x 40 workers, 59188K bytes max (seg7).
+ Statement statistics:
+   Memory used: 1058134K bytes
+ Settings:  optimizer=on
+ Optimizer status: PQO version 1.591
+ Total runtime: 5901.432 ms
+(66 rows)

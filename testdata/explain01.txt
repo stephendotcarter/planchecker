@@ -1,0 +1,14 @@
+                                             QUERY PLAN
+-----------------------------------------------------------------------------------------------------
+ Gather Motion 2:1  (slice1; segments: 2)  (cost=0.00..431.00 rows=1 width=8)
+   ->  Sequence  (cost=0.00..431.00 rows=1 width=8)
+         ->  Partition Selector for sales (dynamic scan id: 1)  (cost=10.00..100.00 rows=50 width=4)
+               Filter: year = 2015
+               Partitions selected:  1 (out of 100)
+         ->  Dynamic Table Scan on sales (dynamic scan id: 1)  (cost=0.00..431.00 rows=1 width=8)
+               Filter: year = 2015
+ Settings:  optimizer=on
+ Optimizer status: PQO version 1.620
+(9 rows)
+
+

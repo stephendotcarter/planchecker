@@ -1,0 +1,15 @@
+gpmt=# explain select c1.oid,(select relname from pg_attribute c2 where c2.attrelid = c1.oid limit 1),(select relname from pg_attribute c2 where c2.atttypid = c1.oid limit 1) from pg_class c1;
+                                   QUERY PLAN
+--------------------------------------------------------------------------------
+ Seq Scan on pg_class c1  (cost=0.00..5553.61 rows=562 width=68)
+   SubPlan 2
+     ->  Limit  (cost=0.00..0.64 rows=1 width=0)
+           ->  Seq Scan on pg_attribute c2  (cost=0.00..71.00 rows=112 width=0)
+                 Filter: atttypid = $1
+   SubPlan 1
+     ->  Limit  (cost=0.00..9.23 rows=1 width=0)
+           ->  Seq Scan on pg_attribute c2  (cost=0.00..71.00 rows=8 width=0)
+                 Filter: attrelid = $1
+ Settings:  optimizer=on
+ Optimizer status: legacy query optimizer
+(11 rows)

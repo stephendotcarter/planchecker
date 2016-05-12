@@ -1,0 +1,55 @@
+
+
+gpmt=# explain analyze select * from sales s1, sales s2 where s1.year = 2015 and s1.id = s2.year;
+                                                                                QUERY PLAN
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 2:1  (slice2; segments: 2)  (cost=0.00..862.00 rows=1 width=16)
+   Rows out:  11000 rows at destination with 6898 ms to first row, 7441 ms to end, start offset by 0.365 ms.
+   ->  Hash Join  (cost=0.00..862.00 rows=1 width=16)
+         Hash Cond: public.sales.id = public.sales.year
+         Rows out:  11000 rows (seg0) with 6897 ms to first row, 7429 ms to end, start offset by 40 ms.
+         Executor memory:  127501K bytes avg, 127501K bytes max (seg0).
+         Work_mem used:  127501K bytes avg, 127501K bytes max (seg0). Workfile: (2 spilling, 0 reused)
+         Work_mem wanted: 171875K bytes avg, 171875K bytes max (seg0) to lessen workfile I/O affecting 2 workers.
+         (seg0)   Initial batch 0:
+         (seg0)     Wrote 54032K bytes to inner workfile.
+         (seg0)     Wrote 16K bytes to outer workfile.
+         (seg0)   Overflow batch 1:
+         (seg0)     Read 54034K bytes from inner workfile.
+         (seg0)     Read 27K bytes from outer workfile.
+         (seg0)   Hash chain length 5500.0 avg, 5500 max, using 1000 of 1048682 buckets.
+         ->  Sequence  (cost=0.00..431.00 rows=1 width=8)
+               Rows out:  Avg 2750.0 rows x 2 workers.  Max 2752 rows (seg0) with 0.045 ms to first row, 0.627 ms to end, start offset by 6937 ms.
+               ->  Partition Selector for sales (dynamic scan id: 1)  (cost=10.00..100.00 rows=50 width=4)
+                     Filter: public.sales.year = 2015
+                     Partitions selected:  1 (out of 100)
+                     Rows out:  0 rows (seg0) with 0.013 ms to end, start offset by 7042 ms.
+               ->  Dynamic Table Scan on sales (dynamic scan id: 1)  (cost=0.00..431.00 rows=1 width=8)
+                     Filter: year = 2015
+                     Rows out:  Avg 2750.0 rows x 2 workers.  Max 2752 rows (seg0) with 0.034 ms to first row, 0.394 ms to end, start offset by 6937 ms.
+                     Partitions scanned:  Avg 1.0 (out of 100) x 2 workers.  Max 1 parts (seg0).
+         ->  Hash  (cost=431.00..431.00 rows=1 width=8)
+               Rows in:  Avg 2744500.0 rows x 2 workers.  Max 2755500 rows (seg1) with 6893 ms to end, start offset by 149 ms.
+               ->  Redistribute Motion 2:2  (slice1; segments: 2)  (cost=0.00..431.00 rows=1 width=8)
+                     Hash Key: public.sales.year
+                     Rows out:  Avg 5500000.0 rows x 2 workers at destination.  Max 5500000 rows (seg0) with 1.675 ms to first row, 4551 ms to end, start offset by 42 ms.
+                     ->  Sequence  (cost=0.00..431.00 rows=1 width=8)
+                           Rows out:  Avg 5500000.0 rows x 2 workers.  Max 5500001 rows (seg0) with 0.132 ms to first row, 1432 ms to end, start offset by 42 ms.
+                           ->  Partition Selector for sales (dynamic scan id: 2)  (cost=10.00..100.00 rows=50 width=4)
+                                 Partitions selected:  100 (out of 100)
+                                 Rows out:  0 rows (seg0) with 0.012 ms to end, start offset by 147 ms.
+                           ->  Dynamic Table Scan on sales (dynamic scan id: 2)  (cost=0.00..431.00 rows=1 width=8)
+                                 Rows out:  Avg 5500000.0 rows x 2 workers.  Max 5500001 rows (seg0) with 0.121 ms to first row, 700 ms to end, start offset by 42 ms.
+                                 Partitions scanned:  Avg 100.0 (out of 100) x 2 workers.  Max 100 parts (seg0).
+ Slice statistics:
+   (slice0)    Executor memory: 203K bytes.
+   (slice1)    Executor memory: 445K bytes avg x 2 workers, 445K bytes max (seg0).
+   (slice2)  * Executor memory: 205132K bytes avg x 2 workers, 205136K bytes max (seg0).  Work_mem: 127501K bytes max, 171875K bytes wanted.
+ Statement statistics:
+   Memory used: 128000K bytes
+   Memory wanted: 172775K bytes
+ Settings:  optimizer=on
+ Optimizer status: PQO version 1.620
+ Total runtime: 7442.441 ms
+(48 rows)
+

@@ -1,0 +1,24 @@
+
+                                                                    QUERY PLAN
+
+--------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 2:1  (slice1; segments: 2)  (cost=0.00..67704.95 rows=4956 width=8)
+   Rows out:  5500 rows at destination with 802 ms to first row, 809 ms to end, start offset by 0.294 ms.
+   ->  Append  (cost=0.00..67704.95 rows=2478 width=8)
+         Rows out:  Avg 2750.0 rows x 2 workers.  Max 2752 rows (seg0) with 805 ms to first row, 806 ms to end, start offset by -53 ms.
+         ->  Seq Scan on sales_1_prt_outlying_years sales  (cost=0.00..67657.90 rows=2477 width=8)
+               Filter: year = 2015
+               Rows out:  0 rows (seg0) with 805 ms to end, start offset by -53 ms.
+         ->  Seq Scan on sales_1_prt_16 sales  (cost=0.00..47.05 rows=2 width=8)
+               Filter: year = 2015
+               Rows out:  Avg 2750.0 rows x 2 workers.  Max 2752 rows (seg0) with 0.093 ms to first row, 0.420 ms to end, start offset by 752 ms.
+ Slice statistics:
+   (slice0)    Executor memory: 267K bytes.
+   (slice1)    Executor memory: 187K bytes avg x 2 workers, 187K bytes max (seg0).
+ Statement statistics:
+   Memory used: 128000K bytes
+ Settings:  optimizer=off
+ Optimizer status: legacy query optimizer
+ Total runtime: 810.345 ms
+(18 rows)
+

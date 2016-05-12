@@ -1,0 +1,18 @@
+gpmt=# explain select * from (select c1.oid,(select relname from pg_attribute c2 where c2.attrelid = c1.oid limit 1),(select relname from pg_attribute c2 where c2.atttypid = c1.oid limit 1) from pg_class c1) a, pg_class c;
+                                   QUERY PLAN
+--------------------------------------------------------------------------------
+ Nested Loop  (cost=11.18..3121499.12 rows=315844 width=272)
+   ->  Seq Scan on pg_class c1  (cost=0.00..10.62 rows=562 width=68)
+   ->  Materialize  (cost=11.18..16.80 rows=281 width=204)
+         ->  Seq Scan on pg_class c  (cost=0.00..10.62 rows=562 width=204)
+   SubPlan 2
+     ->  Limit  (cost=0.00..0.64 rows=1 width=0)
+           ->  Seq Scan on pg_attribute c2  (cost=0.00..71.00 rows=112 width=0)
+                 Filter: atttypid = $1
+   SubPlan 1
+     ->  Limit  (cost=0.00..9.23 rows=1 width=0)
+           ->  Seq Scan on pg_attribute c2  (cost=0.00..71.00 rows=8 width=0)
+                 Filter: attrelid = $1
+ Settings:  enable_hashjoin=off; enable_indexscan=off
+ Optimizer status: legacy query optimizer
+(13 rows)

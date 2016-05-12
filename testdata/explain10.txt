@@ -1,0 +1,24 @@
+gpmt-#     WHERE dr.oid = c.oid;
+                                        QUERY PLAN
+------------------------------------------------------------------------------------------
+ Gather Motion 2:1  (slice3; segments: 2)  (cost=58.89..3127891.81 rows=315844 width=476)
+   ->  Nested Loop  (cost=58.89..3127891.81 rows=157922 width=476)
+         ->  Hash Join  (cost=30.29..69.01 rows=281 width=408)
+               Hash Cond: c.oid = dr.oid
+               ->  Broadcast Motion 1:2  (slice1)  (cost=0.00..27.48 rows=1124 width=208)
+                     ->  Seq Scan on pg_class c  (cost=0.00..10.62 rows=562 width=208)
+               ->  Hash  (cost=16.24..16.24 rows=562 width=208)
+                     ->  Seq Scan on pg_class dr  (cost=0.00..16.24 rows=562 width=208)
+         ->  Materialize  (cost=28.60..39.84 rows=562 width=68)
+               ->  Broadcast Motion 1:2  (slice2)  (cost=0.00..27.48 rows=1124 width=68)
+                     ->  Seq Scan on pg_class c1  (cost=0.00..10.62 rows=562 width=68)
+         SubPlan 2
+           ->  Limit  (cost=0.00..0.64 rows=1 width=0)
+                 ->  Seq Scan on pg_attribute c2  (cost=0.00..71.00 rows=112 width=0)
+                       Filter: atttypid = $1
+         SubPlan 1
+           ->  Limit  (cost=0.00..9.23 rows=1 width=0)
+                 ->  Seq Scan on pg_attribute c2  (cost=0.00..71.00 rows=8 width=0)
+                       Filter: attrelid = $1
+ Optimizer status: legacy query optimizer
+(20 rows)

@@ -1,0 +1,38 @@
+mike=# set explain_memory_verbosity = SUMMARY;
+SET
+mike=# EXPLAIN ANALYZE select * from test1 t1 join test2 t2 on t1.a = t2.b where (t1.a % 7) =0  or (t2.a %3) = 0;
+                                                                                                                         QUERY PLAN
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 2:1  (slice2; segments: 2)  (cost=212.65..350.03 rows=14 width=16)
+   Rows out:  2667 rows at destination with 88 ms to first row, 94 ms to end, start offset by 8.076 ms.
+   Memory:  28K bytes.
+   ->  Hash Join  (cost=212.65..350.03 rows=7 width=16)
+         Hash Cond: t1.a = t2.b
+         Join Filter: (t1.a % 7) = 0 OR (t2.a % 3) = 0
+         Rows out:  Avg 1333.5 rows x 2 workers.  Max 1334 rows (seg0) with 87 ms to first row, 90 ms to end, start offset by 9.117 ms.
+         Executor memory:  55K bytes avg, 79K bytes max (seg1).
+         Work_mem used:  55K bytes avg, 79K bytes max (seg1). Workfile: (0 spilling, 0 reused)
+         Memory:  10K bytes avg, 10K bytes max (seg0).
+         (seg1)   Hash chain length 1111.0 avg, 2000 max, using 3 of 1048589 buckets.
+         ->  Seq Scan on test1 t1  (cost=0.00..112.00 rows=5000 width=8)
+               Rows out:  Avg 5000.0 rows x 2 workers.  Max 5001 rows (seg0) with 47 ms to end, start offset by 49 ms.
+               Memory:  36K bytes avg, 36K bytes max (seg0).
+         ->  Hash  (cost=212.40..212.40 rows=10 width=8)
+               Rows in:  Avg 2333.5 rows x 2 workers.  Max 3333 rows (seg1) with 34 ms to end, start offset by 16 ms.
+               Memory:  12417K bytes avg, 12456K bytes max (seg1).
+               ->  Redistribute Motion 2:2  (slice1; segments: 2)  (cost=0.00..212.40 rows=10 width=8)
+                     Hash Key: t2.b
+                     Rows out:  Avg 2333.5 rows x 2 workers at destination.  Max 3333 rows (seg1) with 29 ms to first row, 33 ms to end, start offset by 16 ms.
+                     Memory:  47K bytes avg, 47K bytes max (seg0).
+                     ->  Seq Scan on test2 t2  (cost=0.00..212.00 rows=10 width=8)
+                           Filter: (b % 7) = 0 OR (a % 3) = 0
+                           Rows out:  Avg 2333.5 rows x 2 workers.  Max 2336 rows (seg1) with 37 ms to first row, 38 ms to end, start offset by 9.667 ms.
+                           Memory:  73K bytes avg, 73K bytes max (seg0).
+ Slice statistics:
+   (slice0)    Executor memory: 203K bytes.  Peak memory: 1718K bytes.  Vmem reserved: 2048K bytes.
+   (slice1)    Executor memory: 199K bytes avg x 2 workers, 199K bytes max (seg0).  Peak memory: 933K bytes avg x 2 workers, 933K bytes max (seg0).
+   (slice2)    Executor memory: 12675K bytes avg x 2 workers, 12771K bytes max (seg1).  Peak memory: 13333K bytes avg x 2 workers, 13372K bytes max (seg1).  Vmem reserved: 12800K bytes avg x 2 workers, 13312K bytes max (seg1).  Work_mem: 79K bytes max.
+ Statement statistics:
+   Memory used: 128000K bytes
+ Total runtime: 116.285 ms
+(32 rows)
