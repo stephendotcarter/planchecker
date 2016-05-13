@@ -22,8 +22,7 @@
                                        Rows out:  0 rows (seg0) with 489 ms to end, start offset by 4940 ms.
                                        Executor memory:  2065K bytes avg, 2065K bytes max (seg0).
                                        ->  Hash Join  (cost=3427.24..48465.24 rows=1 width=27)
-                                             Hash Cond: o.insertion_order_id::integer = d.brief_code::integer AND ac.campaign_sc::text = d.adserver_campaign_id::text AND agg.activity_ctgy_id = t.activity_ctg
-y_id
+                                             Hash Cond: o.insertion_order_id::integer = d.brief_code::integer AND ac.campaign_sc::text = d.adserver_campaign_id::text AND agg.activity_ctgy_id = t.activity_ctgy_id
                                              Rows out:  0 rows (seg0) with 487 ms to end, start offset by 4941 ms.
                                              ->  Redistribute Motion 320:320  (slice11; segments: 320)  (cost=2890.83..47925.75 rows=1 width=73)
                                                    Hash Key: agg.activity_ctgy_id, ac.campaign_sc::text, o.insertion_order_id::integer
@@ -47,8 +46,7 @@ y_id
                                                                                  Hash Key: d1.date_dt::text
                                                                                  Rows out:  (No row requested) 0 rows at destination (seg0) with 0 ms to end.
                                                                                  ->  Seq Scan on adwd_date d1  (cost=0.00..425.92 rows=34 width=6)
-                                                                                       Rows out:  Avg 33.1 rows x 320 workers.  Max 38 rows (seg24) with 0.064 ms to first row, 0.073 ms to end, start offset b
-y 4911 ms.
+                                                                                       Rows out:  Avg 33.1 rows x 320 workers.  Max 38 rows (seg24) with 0.064 ms to first row, 0.073 ms to end, start offset by 4911 ms.
                                                                            ->  Hash  (cost=2220.19..2220.19 rows=1 width=80)
                                                                                  Rows in:  0 rows (seg0) with 661 ms to end, start offset by 4803 ms.
                                                                                  ->  Redistribute Motion 320:320  (slice9; segments: 320)  (cost=1554.77..2220.19 rows=1 width=80)
@@ -61,8 +59,7 @@ y 4911 ms.
                                                                                                    Hash Key: d2.date_dt::text
                                                                                                    Rows out:  (No row requested) 0 rows at destination (seg0) with 0 ms to end.
                                                                                                    ->  Seq Scan on adwd_date d2  (cost=0.00..425.92 rows=34 width=6)
-                                                                                                         Rows out:  Avg 33.1 rows x 320 workers.  Max 38 rows (seg24) with 0.200 ms to first row, 0.220 ms to e
-nd, start offset by 4735 ms.
+                                                                                                         Rows out:  Avg 33.1 rows x 320 workers.  Max 38 rows (seg24) with 0.200 ms to first row, 0.220 ms to end, start offset by 4735 ms.
                                                                                              ->  Hash  (cost=1554.72..1554.72 rows=1 width=88)
                                                                                                    Rows in:  0 rows (seg0) with 640 ms to end, start offset by 4785 ms.
                                                                                                    ->  Redistribute Motion 320:320  (slice8; segments: 320)  (cost=2.12..1554.72 rows=1 width=88)
@@ -77,8 +74,7 @@ nd, start offset by 4735 ms.
                                                                                                                      ->  Hash Join  (cost=1.09..1553.42 rows=1 width=62)
                                                                                                                            Hash Cond: o.insertion_order_id::integer = spb.insertion_order_id::integer
                                                                                                                            Rows out:  0 rows (seg0) with 561 ms to end, start offset by 4912 ms.
-                                                                                                                           ->  Redistribute Motion 320:320  (slice3; segments: 320)  (cost=0.00..1551.84 rows=1
- width=26)
+                                                                                                                           ->  Redistribute Motion 320:320  (slice3; segments: 320)  (cost=0.00..1551.84 rows=1 width=26)
                                                                                                                                  Hash Key: o.insertion_order_id::integer
                                                                                                                                  Rows out:  (No row requested) 0 rows at destination (seg0) with 0 ms to end.
                                                                                                                                  ->  Seq Scan on adwd_insertion_order o  (cost=0.00..1548.58 rows=1 width=26)
@@ -86,45 +82,30 @@ nd, start offset by 4735 ms.
                                                                                                                                        Rows out:  0 rows (seg0) with 4.880 ms to end, start offset by 5317 ms.
                                                                                                                            ->  Hash  (cost=1.08..1.08 rows=1 width=36)
                                                                                                                                  Rows in:  0 rows (seg0) with 559 ms to end, start offset by 4914 ms.
-                                                                                                                                 ->  Redistribute Motion 320:320  (slice5; segments: 320)  (cost=1.04..1.08 row
-s=1 width=36)
+                                                                                                                                 ->  Redistribute Motion 320:320  (slice5; segments: 320)  (cost=1.04..1.08 rows=1 width=36)
                                                                                                                                        Hash Key: spb.insertion_order_id::integer
-                                                                                                                                       Rows out:  0 rows at destination (seg0) with 559 ms to end, start offset
- by 4914 ms.
+                                                                                                                                       Rows out:  0 rows at destination (seg0) with 559 ms to end, start offset by 4914 ms.
                                                                                                                                        ->  Subquery Scan spb  (cost=1.04..1.06 rows=1 width=36)
-                                                                                                                                             Rows out:  0 rows (seg0) with 663 ms to end, start offset by 4779
-ms.
+                                                                                                                                             Rows out:  0 rows (seg0) with 663 ms to end, start offset by 4779 ms.
                                                                                                                                              ->  HashAggregate  (cost=1.04..1.05 rows=1 width=36)
-                                                                                                                                                   Group By: adwt_rtb_global_placement.insertion_order_id, adwt
-_rtb_global_placement.buy_purchase_id
-                                                                                                                                                   Rows out:  0 rows (seg0) with 663 ms to end, start offset by
- 4779 ms.
+                                                                                                                                                   Group By: adwt_rtb_global_placement.insertion_order_id, adwt_rtb_global_placement.buy_purchase_id
+                                                                                                                                                   Rows out:  0 rows (seg0) with 663 ms to end, start offset by 4779 ms.
                                                                                                                                                    Executor memory:  4113K bytes avg, 4113K bytes max (seg0).
-                                                                                                                                                   ->  Redistribute Motion 320:320  (slice4; segments: 320)  (c
-ost=1.00..1.02 rows=1 width=36)
-                                                                                                                                                         Hash Key: adwt_rtb_global_placement.insertion_order_id
-, adwt_rtb_global_placement.buy_purchase_id
-                                                                                                                                                         Rows out:  0 rows at destination (seg0) with 657 ms to
- end, start offset by 4782 ms.
+                                                                                                                                                   ->  Redistribute Motion 320:320  (slice4; segments: 320)  (cost=1.00..1.02 rows=1 width=36)
+                                                                                                                                                         Hash Key: adwt_rtb_global_placement.insertion_order_id, adwt_rtb_global_placement.buy_purchase_id
+                                                                                                                                                         Rows out:  0 rows at destination (seg0) with 657 ms to end, start offset by 4782 ms.
                                                                                                                                                          ->  HashAggregate  (cost=1.00..1.00 rows=1 width=36)
-                                                                                                                                                               Group By: adwt_rtb_global_placement.insertion_or
-der_id, adwt_rtb_global_placement.buy_purchase_id
-                                                                                                                                                               Rows out:  0 rows (seg0) with 23 ms to end, star
-t offset by 5267 ms.
-                                                                                                                                                               Executor memory:  4113K bytes avg, 4113K bytes m
-ax (seg0).
-                                                                                                                                                               ->  Seq Scan on adwt_rtb_global_placement  (cost
-=0.00..1.00 rows=1 width=36)
-                                                                                                                                                                     Rows out:  0 rows (seg0) with 1.870 ms to
-end, start offset by 5323 ms.
+                                                                                                                                                               Group By: adwt_rtb_global_placement.insertion_order_id, adwt_rtb_global_placement.buy_purchase_id
+                                                                                                                                                               Rows out:  0 rows (seg0) with 23 ms to end, start offset by 5267 ms.
+                                                                                                                                                               Executor memory:  4113K bytes avg, 4113K bytes max (seg0).
+                                                                                                                                                               ->  Seq Scan on adwt_rtb_global_placement  (cost=0.00..1.00 rows=1 width=36)
+                                                                                                                                                                     Rows out:  0 rows (seg0) with 1.870 ms toend, start offset by 5323 ms.
                                                                                                                ->  Hash  (cost=1.02..1.02 rows=1 width=30)
                                                                                                                      Rows in:  0 rows (seg0) with 605 ms to end, start offset by 4796 ms.
-                                                                                                                     ->  Redistribute Motion 320:320  (slice7; segments: 320)  (cost=0.00..1.02 rows=1 width=30
-)
+                                                                                                                     ->  Redistribute Motion 320:320  (slice7; segments: 320)  (cost=0.00..1.02 rows=1 width=30)
                                                                                                                            Hash Key: agg.buy_purchase_id
                                                                                                                            Rows out:  0 rows at destination (seg0) with 605 ms to end, start offset by 4796 ms.
-                                                                                                                           ->  Seq Scan on adwt_rtb_dlvd_event_creative_time_info agg  (cost=0.00..1.00 rows=1
-width=30)
+                                                                                                                           ->  Seq Scan on adwt_rtb_dlvd_event_creative_time_info agg  (cost=0.00..1.00 rows=1 width=30)
                                                                                                                                  Rows out:  0 rows (seg0) with 2.729 ms to end, start offset by 5393 ms.
                                              ->  Hash  (cost=536.17..536.17 rows=1 width=48)
                                                    Rows in:  0 rows (seg0) with 486 ms to end, start offset by 4942 ms.
