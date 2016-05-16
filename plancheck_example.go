@@ -3,7 +3,7 @@ package main
 import (
     "os"
     "fmt"
-    "./plan"
+    "github.com/pivotal-gss/planchecker/plan"
 )
 
 func main() {
