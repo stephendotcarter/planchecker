@@ -6,11 +6,13 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"errors"
 )
 
 type Node struct {
 	Operator string
 	Indent   int
+	Slice    int64
 	Cost     string
 	Rows     int64
 	Width    int64
@@ -64,6 +66,7 @@ type Explain struct {
 var (
 	patterns = map[string]*regexp.Regexp{
 		"NODE":               regexp.MustCompile(`(.*) \(cost=(.*) rows=(.*) width=(.*)\)`),
+		"SLICE":              regexp.MustCompile(`(.*)  \(slice(.*); segments: (.*)\)`),
 		"SUBPLAN":            regexp.MustCompile(` SubPlan `),
 		
 		"ROWSTAT":            regexp.MustCompile(`Rows (out|in): `),
@@ -183,21 +186,47 @@ func parseRowStat(line string) RowStat {
 }
 
 
-func parseNodeRawLines(n *Node) {
+func parseNodeRawLines(n *Node) error {
 	// line 0 will always be the node line
 	// Example: ->  Broadcast Motion 1:2  (slice1)  (cost=0.00..27.48 rows=1124 width=208)
 	line := n.RawLines[0]
-	groups := patterns["NODE"].FindStringSubmatch(line)
-	n.Operator = strings.TrimSpace(groups[1])
-	n.Cost = strings.TrimSpace(groups[2])
-	n.Rows, _ = strconv.ParseInt(strings.TrimSpace(groups[3]), 10, 64)
-	n.Width, _ = strconv.ParseInt(strings.TrimSpace(groups[4]), 10, 64)
 
-	for _, line := range n.RawLines {
+	groups := patterns["NODE"].FindStringSubmatch(line)
+	fmt.Println("GROUPS:", groups)
+
+	if len(groups) == 5 {
+		// Remove the indent arrow
+		groups[1] = strings.Trim(groups[1], " ->")
+
+		// Check if the string contains slice information
+		sliceGroups := patterns["SLICE"].FindStringSubmatch(groups[1])
+		if len(sliceGroups) == 4 {
+			n.Operator = strings.TrimSpace(sliceGroups[1])
+			n.Slice, _ = strconv.ParseInt(strings.TrimSpace(sliceGroups[2]), 10, 64)
+		// Else it's just the operator
+		} else {
+			n.Operator = strings.TrimSpace(groups[1])
+			n.Slice = -1
+		}
+
+		// Store the remaining params
+		n.Cost = strings.TrimSpace(groups[2])
+		n.Rows, _ = strconv.ParseInt(strings.TrimSpace(groups[3]), 10, 64)
+		n.Width, _ = strconv.ParseInt(strings.TrimSpace(groups[4]), 10, 64)
+
+	} else {
+		fmt.Println("FAIL")
+		return errors.New("Unable to parse node")
+	}
+	
+	// Parse the remaining 
+	for _, line := range n.RawLines[1:] {
 		if patterns["ROWSTAT"].MatchString(line) {
 			n.RowStat = parseRowStat(line)
 		}
 	}
+
+	return nil
 }
 
 
@@ -448,7 +477,6 @@ func (e *Explain) PrintDebug() {
 	} else {
 		fmt.Printf("\t-\n")
 	}
-	
 
 	fmt.Println("Optimizer status:")
 	if e.Optimizer != "" {
@@ -472,7 +500,7 @@ func (e *Explain) InitFromString(text string) {
 }
 
 
-func (e *Explain) InitFromFile(filename string) {
+func (e *Explain) InitFromFile(filename string) error {
 	fmt.Printf("FUNC InitFromFile\n")
 	// Check file name exists
 
@@ -485,7 +513,12 @@ func (e *Explain) InitFromFile(filename string) {
 
 	e.ParseLines()
 
-	//for _, n := range e.Nodes {
-	//	parseNodeRawLines(n)
-	//}
+	for _, n := range e.Nodes {
+		err := parseNodeRawLines(n)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

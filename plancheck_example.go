@@ -2,6 +2,7 @@ package main
 
 import (
     "os"
+    "fmt"
     "./plan"
 )
 
@@ -13,7 +14,11 @@ func main() {
     var explain plan.Explain
 
     // Init the explain from filename
-    explain.InitFromFile(filename)
+    err := explain.InitFromFile(filename)
+    if err != nil {
+        fmt.Printf("%s", err)
+        os.Exit(1)
+    }
 
     // Print debug information
     explain.PrintDebug()
