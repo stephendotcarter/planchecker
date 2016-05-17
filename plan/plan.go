@@ -460,17 +460,21 @@ func (e *Explain) PrintDebug() {
 
 	fmt.Println("")
 
-	fmt.Println("Slice statistics:")
-	for _, stat := range e.SliceStats {
-		fmt.Printf("\t%s\n", stat)
+	if len(e.SliceStats) > 0 {
+		fmt.Println("Slice statistics:")
+		for _, stat := range e.SliceStats {
+			fmt.Printf("\t%s\n", stat)
+		}
 	}
 
-	fmt.Println("Statement statistics:")
-	fmt.Printf("\tMemory used: %d\n", e.StatementStats.MemoryUsed)
-	fmt.Printf("\tMemory wanted: %d\n", e.StatementStats.MemoryWanted)
-
-	fmt.Println("Settings:")
+	if e.StatementStats.MemoryUsed > 0 {
+		fmt.Println("Statement statistics:")
+		fmt.Printf("\tMemory used: %d\n", e.StatementStats.MemoryUsed)
+		fmt.Printf("\tMemory wanted: %d\n", e.StatementStats.MemoryWanted)
+	}
+	
 	if len(e.Settings) > 0 {
+		fmt.Println("Settings:")
 		for _, setting := range e.Settings {
 			fmt.Printf("\t%s=%s\n", setting.Name, setting.Value)
 		}
@@ -478,16 +482,18 @@ func (e *Explain) PrintDebug() {
 		fmt.Printf("\t-\n")
 	}
 
-	fmt.Println("Optimizer status:")
 	if e.Optimizer != "" {
+		fmt.Println("Optimizer status:")
 		fmt.Printf("\t%s\n", e.Optimizer)
 	} else {
 		fmt.Printf("\t-\n")
 	}
 	
+	if e.Runtime > 0 {
+		fmt.Println("Total runtime:")
+		fmt.Printf("\t%f\n", e.Runtime)
+	}
 
-	fmt.Println("Total runtime:")
-	fmt.Printf("\t%f\n", e.Runtime)
 	fmt.Printf("########## END PRINT DEBUG ##########\n\n")
 }
 
