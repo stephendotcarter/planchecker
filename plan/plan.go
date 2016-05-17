@@ -433,7 +433,7 @@ func (e *Explain) PrintDebug() {
 	for i, node := range e.Nodes {
 		thisIndent := strings.Repeat(" ", node.Indent)
 		fmt.Printf("----- %d -----\n", i)
-		fmt.Printf("%s%s | startup cost %s | total cost %s | rows %d | width %d\n",
+		fmt.Printf("%sNODE: %s | startup cost %s | total cost %s | rows %d | width %d\n",
 			thisIndent,
 			node.Operator,
 			node.StartupCost,
@@ -454,8 +454,7 @@ func (e *Explain) PrintDebug() {
 		*/
 
 		for _, line := range node.RawLines {
-			fmt.Printf("RAWLINE: %s\n", line)
-			//fmt.Printf("%sRAWLINE: %s\n", thisIndent, line)
+			fmt.Printf("%sRAWLINE: %s\n", thisIndent, strings.Trim(line, " "))
 		}
 	}
 
