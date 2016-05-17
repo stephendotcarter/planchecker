@@ -10,14 +10,15 @@ import (
 )
 
 type Node struct {
-	Operator string
-	Indent   int
-	Slice    int64
-	Cost     string
-	Rows     int64
-	Width    int64
-	RowStat RowStat
-	RawLines []string
+	Operator     string
+	Indent       int
+	Slice        int64
+	StartupCost  string
+	TotalCost    string
+	Rows         int64
+	Width        int64
+	RowStat      RowStat
+	RawLines     []string
 }
 
 type RowStat struct {
@@ -65,7 +66,7 @@ type Explain struct {
 
 var (
 	patterns = map[string]*regexp.Regexp{
-		"NODE":               regexp.MustCompile(`(.*) \(cost=(.*) rows=(.*) width=(.*)\)`),
+		"NODE":               regexp.MustCompile(`(.*) \(cost=(.*)\.\.(.*) rows=(.*) width=(.*)\)`),
 		"SLICE":              regexp.MustCompile(`(.*)  \(slice(.*); segments: (.*)\)`),
 		"SUBPLAN":            regexp.MustCompile(` SubPlan `),
 		
@@ -194,7 +195,7 @@ func parseNodeRawLines(n *Node) error {
 	groups := patterns["NODE"].FindStringSubmatch(line)
 	fmt.Println("GROUPS:", groups)
 
-	if len(groups) == 5 {
+	if len(groups) == 6 {
 		// Remove the indent arrow
 		groups[1] = strings.Trim(groups[1], " ->")
 
@@ -210,9 +211,10 @@ func parseNodeRawLines(n *Node) error {
 		}
 
 		// Store the remaining params
-		n.Cost = strings.TrimSpace(groups[2])
-		n.Rows, _ = strconv.ParseInt(strings.TrimSpace(groups[3]), 10, 64)
-		n.Width, _ = strconv.ParseInt(strings.TrimSpace(groups[4]), 10, 64)
+		n.StartupCost = strings.TrimSpace(groups[2])
+		n.TotalCost = strings.TrimSpace(groups[3])
+		n.Rows, _ = strconv.ParseInt(strings.TrimSpace(groups[4]), 10, 64)
+		n.Width, _ = strconv.ParseInt(strings.TrimSpace(groups[5]), 10, 64)
 
 	} else {
 		fmt.Println("FAIL")
@@ -429,16 +431,15 @@ func renderNode(node Node) string {
 func (e *Explain) PrintDebug() {
 	fmt.Printf("\n########## START PRINT DEBUG ##########\n")
 	for i, node := range e.Nodes {
-		//thisIndent := strings.Repeat(" ", node.Indent)
+		thisIndent := strings.Repeat(" ", node.Indent)
 		fmt.Printf("----- %d -----\n", i)
-		/*
-		fmt.Printf("%s%s | cost %s | rows %d | width %d\n",
+		fmt.Printf("%s%s | startup cost %s | total cost %s | rows %d | width %d\n",
 			thisIndent,
 			node.Operator,
-			node.Cost,
+			node.StartupCost,
+			node.TotalCost,
 			node.Rows,
 			node.Width)
-		*/
 		/*
 		fmt.Printf("%sInOut %s | Rows %f | Avg %f | Max %f | Workers %d | First %f | End %f | Offset %f\n",
 			thisIndent,
