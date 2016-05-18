@@ -1,0 +1,37 @@
+                                                                       QUERY PLAN
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+ HashAggregate  (cost=3487058796.34..3487058796.66 rows=1 width=516)
+   Filter: (pg_catalog.avg(partial_aggregation.unnamed_attr_2) * 100.0) <= 98.0
+   Group By: d_is_circuits.tag
+   ->  Redistribute Motion 32:32  (slice5; segments: 32)  (cost=3487058795.71..3487058796.07 rows=1 width=548)
+         Hash Key: d_is_circuits.tag
+         ->  HashAggregate  (cost=3487058795.71..3487058795.71 rows=1 width=548)
+               Group By: d_is_circuits.tag
+               ->  Nested Loop  (cost=12576.83..3487058795.62 rows=1 width=37)   <<<<< Nested Loop
+                     Join Filter: a13.master_account_sk = a14.account_sk
+                     ->  Nested Loop  (cost=11417.09..3485092123.71 rows=14226 width=41)     <<<<< Nested Loop
+                           ->  Broadcast Motion 32:32  (slice3; segments: 32)  (cost=11304.61..23257513.29 rows=509103 width=41)
+                                 ->  Hash Join  (cost=11304.61..23089509.37 rows=15910 width=41)
+                                       Hash Cond: a11.fenix_sk = d_is_circuits.fenix_sk
+                                       ->  Redistribute Motion 32:32  (slice2; segments: 32)  (cost=1619.21..23072161.37 rows=16236 width=14)
+                                             Hash Key: a11.fenix_sk
+                                             ->  Hash Join  (cost=1619.21..23061770.83 rows=16236 width=14)
+                                                   Hash Cond: a11.event_date_sast = a15.date_id
+                                                   ->  Seq Scan on f_fenix_itraffic a11  (cost=0.00..19628027.16 rows=42317088 width=18)
+                                                   ->  Hash  (cost=1608.00..1608.00 rows=29 width=4)
+                                                         ->  Broadcast Motion 32:32  (slice1; segments: 32)  (cost=0.00..1608.00 rows=29 width=4)
+                                                               ->  Seq Scan on d_date a15  (cost=0.00..1598.75 rows=1 width=4)
+                                                                     Filter: calendar_date >= '2016-02-01'::date AND calendar_date <= '2016-02-29'::date
+                                       ->  Hash  (cost=5246.29..5246.29 rows=11098 width=35)
+                                             ->  Seq Scan on d_is_circuits_old d_is_circuits  (cost=0.00..5246.29 rows=11098 width=35)
+                           ->  Bitmap Append-Only Row-Oriented Scan on d_customer_account a13  (cost=112.47..212.48 rows=1 width=12)
+                                 Recheck Cond: a11.child_accountsk = a13.account_sk
+                                 ->  Bitmap Index Scan on account_sk_index  (cost=0.00..112.47 rows=1 width=0)
+                                       Index Cond: a11.child_accountsk = a13.account_sk
+                     ->  Materialize  (cost=1159.75..1159.85 rows=11 width=8)
+                           ->  Broadcast Motion 32:32  (slice4; segments: 32)  (cost=110.27..1159.74 rows=1 width=8)
+                                 ->  Bitmap Append-Only Row-Oriented Scan on d_customer_account a14  (cost=110.27..1159.53 rows=1 width=8)
+                                       Recheck Cond: account_id::text = '1-C7-4426'::text
+                                       ->  Bitmap Index Scan on account_id_index2  (cost=0.00..110.27 rows=1 width=0)
+                                             Index Cond: account_id::text = '1-C7-4426'::text
+(34 rows)
