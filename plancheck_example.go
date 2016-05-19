@@ -20,6 +20,6 @@ func main() {
         os.Exit(1)
     }
 
-    // Print debug information
-    explain.PrintDebug()
+    // Print Plan
+    explain.PrintPlan()
 }
