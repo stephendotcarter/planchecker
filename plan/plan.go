@@ -12,6 +12,7 @@ import (
 type Node struct {
 	Operator     string
 	Indent       int
+	Offset       int
 	Slice        int64
 	StartupCost  string
 	TotalCost    string
@@ -19,6 +20,15 @@ type Node struct {
 	Width        int64
 	RowStat      RowStat
 	RawLines     []string
+	SubNodes     []*Node
+	SubPlans     []*Plan
+}
+
+type Plan struct {
+	Name     string
+	Indent   int
+	Offset   int
+	TopNode  *Node
 }
 
 type RowStat struct {
@@ -53,6 +63,7 @@ type Setting struct {
 
 type Explain struct {
 	Nodes          []*Node
+	Plans          []*Plan
 	SliceStats     []string
 	StatementStats StatmentStat
 	Settings       []Setting
@@ -67,7 +78,7 @@ type Explain struct {
 var (
 	patterns = map[string]*regexp.Regexp{
 		"NODE":               regexp.MustCompile(`(.*) \(cost=(.*)\.\.(.*) rows=(.*) width=(.*)\)`),
-		"SLICE":              regexp.MustCompile(`(.*)  \(slice(.*); segments: (.*)\)`),
+		"SLICE":              regexp.MustCompile(`(.*)  \(slice([0-9]*)`),
 		"SUBPLAN":            regexp.MustCompile(` SubPlan `),
 		
 		"ROWSTAT":            regexp.MustCompile(`Rows (out|in): `),
@@ -91,7 +102,7 @@ var (
 		"RUNTIME":            regexp.MustCompile(` Total runtime: `),
 	}
 
-	//currentNode *Node
+	indentDepth = 4 // Used for printing the plan
 )
 
 
@@ -104,34 +115,9 @@ func check(e error) {
 }
 
 
+// Calculate indent by triming white space and checking diff on string length
 func getIndent(line string) int {
-	// Diff on line minus left whitspace (minus 3 as everything is indented)
 	return len(line) - len(strings.TrimLeft(line, " "))
-}
-
-
-//func parseNode(line string) {
-//    fmt.Println("NODE")
-//
-//    groups := patterns["node"].FindStringSubmatch(line)
-//    operator := strings.TrimSpace(groups[1])
-//    cost := strings.TrimSpace(groups[2])
-//    rows := strings.TrimSpace(groups[3])
-//    width := strings.TrimSpace(groups[4])
-//    fmt.Printf("\toperator: %s\n\tcost: %s\n\trows: %s\n\twidth: %s\n", operator, cost, rows, width)
-//}
-
-
-func parseNode(line string) *Node {
-	// Set node indent
-	// Rest of node parsing is handled in parseNodeRawLines
-	node := new(Node)
-	node.Indent = getIndent(line)
-	node.RawLines = []string{
-		line,
-	}
-
-	return node
 }
 
 
@@ -193,7 +179,6 @@ func parseNodeRawLines(n *Node) error {
 	line := n.RawLines[0]
 
 	groups := patterns["NODE"].FindStringSubmatch(line)
-	fmt.Println("GROUPS:", groups)
 
 	if len(groups) == 6 {
 		// Remove the indent arrow
@@ -201,7 +186,7 @@ func parseNodeRawLines(n *Node) error {
 
 		// Check if the string contains slice information
 		sliceGroups := patterns["SLICE"].FindStringSubmatch(groups[1])
-		if len(sliceGroups) == 4 {
+		if len(sliceGroups) == 3 {
 			n.Operator = strings.TrimSpace(sliceGroups[1])
 			n.Slice, _ = strconv.ParseInt(strings.TrimSpace(sliceGroups[2]), 10, 64)
 		// Else it's just the operator
@@ -232,25 +217,35 @@ func parseNodeRawLines(n *Node) error {
 }
 
 
+func (e *Explain) parseNode(line string) *Node {
+	// Set node indent
+	// Rest of node parsing is handled in parseNodeRawLines
+	node := new(Node)
+	node.Indent = getIndent(line)
+	node.Offset = e.lineOffset
+	node.RawLines = []string{
+		line,
+	}
+
+	return node
+}
+
+
 // ------------------------------------------------------------
 // SubPlan 2
 //   ->  Limit  (cost=0.00..0.64 rows=1 width=0)
 //         ->  Seq Scan on pg_attribute c2  (cost=0.00..71.00 rows=112 width=0)
 //               Filter: atttypid = $1
-func parsePlan(line string) {
+func (e *Explain) parsePlan(line string) *Plan {
 	fmt.Println("PARSE SUBPLAN")
 
-	/*
-	   groups := patterns["NODE"].FindStringSubmatch(line)
+	plan := new(Plan)
+	plan.Name = strings.Trim(line, " ")
+	plan.Indent = getIndent(line)
+	plan.Offset = e.lineOffset
+	plan.TopNode = new(Node)
 
-	   operator := strings.TrimSpace(groups[1])
-	   cost := strings.TrimSpace(groups[2])
-	   rows, _ := strconv.ParseInt(strings.TrimSpace(groups[3]), 10, 64)
-	   width, _ := strconv.ParseInt(strings.TrimSpace(groups[4]), 10, 64)
-	   fmt.Printf("\toperator: %s\n\tcost: %s\n\trows: %d\n\twidth: %d\n", operator, cost, rows, width)
-	*/
-
-	return
+	return plan
 }
 
 
@@ -376,14 +371,23 @@ func (e *Explain) parseline(line string) {
 	
 	} else if patterns["NODE"].MatchString(line) {
 		// Parse a new node
-		newNode := parseNode(line)
+		newNode := e.parseNode(line)
+
+		// If this is the first node then insert the TopPlan also
+		if len(e.Nodes) == 0 {
+			newPlan := e.parsePlan("Plan")
+			e.Plans = append(e.Plans, newPlan)
+		}
 		
 		// Append node to Nodes array
 		e.Nodes = append(e.Nodes, newNode)
 
 	} else if patterns["SUBPLAN"].MatchString(line) {
-		//newNode := parseNode(line, "NODE")
-		parsePlan(line)
+		// Parse a new plan
+		newPlan := e.parsePlan(line)
+
+		// Append plan to Plans array
+		e.Plans = append(e.Plans, newPlan)
 
 	} else if patterns["SLICESTATS"].MatchString(line) {
 		e.parseSliceStats(line)
@@ -428,18 +432,129 @@ func renderNode(node Node) string {
 }
 
 
-func (e *Explain) PrintDebug() {
-	fmt.Printf("\n########## START PRINT DEBUG ##########\n")
-	for i, node := range e.Nodes {
-		thisIndent := strings.Repeat(" ", node.Indent)
-		fmt.Printf("----- %d -----\n", i)
-		fmt.Printf("%sNODE: %s | startup cost %s | total cost %s | rows %d | width %d\n",
-			thisIndent,
-			node.Operator,
-			node.StartupCost,
-			node.TotalCost,
-			node.Rows,
-			node.Width)
+func (e *Explain) BuildTree() {
+	fmt.Println("########## START BUILD TREE ##########")
+
+	fmt.Println("########## PLANS ##########")
+	for i := len(e.Plans)-1; i > -1; i-- {
+		fmt.Println(e.Plans[i].Indent, e.Plans[i].Name)
+
+		// Loop upwards to find parent
+		for p := len(e.Nodes)-1; p > -1; p-- {
+			fmt.Println("\t", e.Nodes[p].Indent, e.Nodes[p].Operator)
+			if e.Plans[i].Indent > e.Nodes[p].Indent && e.Plans[i].Offset > e.Nodes[p].Offset {
+				fmt.Println("\t\tPARENT")
+				// Prepend to start of array to keep ordering
+				e.Nodes[p].SubPlans = append([]*Plan{e.Plans[i]}, e.Nodes[p].SubPlans...)
+				break
+			}
+		}
+	}
+
+	// Insert Nodes
+	fmt.Println("########## NODES ##########")
+	for i := len(e.Nodes)-1; i > -1; i-- {
+		fmt.Println(e.Nodes[i].Indent, e.Nodes[i].Operator)
+
+		foundParent := false
+
+		// Loop upwards to find parent
+
+		// First check for parent plans
+		for p := len(e.Plans)-1; p > -1; p-- {
+			fmt.Println("\t", e.Plans[p].Indent, e.Plans[p].Name)
+			// If the parent is a SubPlan it will always be Indent-2 and Offset-1
+			//  SubPlan 1
+			//    ->  Limit  (cost=0.00..9.23 rows=1 width=0)
+			if (e.Nodes[i].Indent - 2) == e.Plans[p].Indent && (e.Nodes[i].Offset -1) == e.Plans[p].Offset {
+				fmt.Println("\t\tPARENT PLAN")
+				// Prepend to start of array to keep ordering
+				e.Plans[p].TopNode = e.Nodes[i]
+				foundParent = true
+				break
+			}
+		}
+
+		if foundParent == true {
+			continue
+		}
+
+		foundParent = false
+
+		// Then check for parent nodes
+		for p := i -1; p > -1; p-- {
+			fmt.Println("\t", e.Nodes[p].Operator)
+			if e.Nodes[i].Indent > e.Nodes[p].Indent {
+				fmt.Println("\t\tPARENT NODE")
+				// Prepend to start of array to keep ordering
+				e.Nodes[p].SubNodes = append([]*Node{e.Nodes[i]}, e.Nodes[p].SubNodes...)
+				foundParent = true
+				break
+			}
+		}
+
+		// 
+		if foundParent == false {
+			fmt.Println("\t\tTOPNODE")
+			e.Plans[0].TopNode = e.Nodes[i]
+		}
+	}
+
+	fmt.Println("########## END BUILD TREE ##########")
+}
+
+
+func (n *Node) Render(indent int) {
+	indent += 1
+	indentString := strings.Repeat(" ", indent * indentDepth)
+	
+	fmt.Printf("%s-> %s | startup cost %s | total cost %s | rows %d | width %d\n",
+			indentString,
+			n.Operator,
+			n.StartupCost,
+			n.TotalCost,
+			n.Rows,
+			n.Width)
+
+	// Render sub nodes
+	for _, s := range n.SubNodes {
+		s.Render(indent)
+	}
+
+	for _, s := range n.SubPlans {
+		s.Render(indent)
+	}
+}
+
+func (p *Plan) Render(indent int) {
+	indent += 1
+	indentString := strings.Repeat(" ", indent * indentDepth)
+
+	fmt.Printf("%s%s\n", indentString, p.Name)
+	p.TopNode.Render(indent)
+}
+
+
+func (e *Explain) PrintPlan() {
+
+	fmt.Println("Plan:")
+	e.Plans[0].TopNode.Render(0)
+	
+	/*
+		if node.Slice > -1 {
+			fmt.Printf("%sSLICE: slice %d\n",
+				thisIndent,
+				node.Slice)
+		}
+
+		for _, n := range node.SubNodes {
+			fmt.Printf("%sSUBNODE: %s\n", thisIndent, n.Operator)
+		}
+
+		for _, p := range node.SubPlans {
+			fmt.Printf("%sSUBPLAN: %s\n", thisIndent, p.Name)
+		}
+	*/
 		/*
 		fmt.Printf("%sInOut %s | Rows %f | Avg %f | Max %f | Workers %d | First %f | End %f | Offset %f\n",
 			thisIndent,
@@ -453,10 +568,11 @@ func (e *Explain) PrintDebug() {
 			node.RowStat.Offset)
 		*/
 
+		/*
 		for _, line := range node.RawLines {
 			fmt.Printf("%sRAWLINE: %s\n", thisIndent, strings.Trim(line, " "))
 		}
-	}
+		*/
 
 	fmt.Println("")
 
@@ -476,17 +592,13 @@ func (e *Explain) PrintDebug() {
 	if len(e.Settings) > 0 {
 		fmt.Println("Settings:")
 		for _, setting := range e.Settings {
-			fmt.Printf("\t%s=%s\n", setting.Name, setting.Value)
+			fmt.Printf("\t%s = %s\n", setting.Name, setting.Value)
 		}
-	} else {
-		fmt.Printf("\t-\n")
 	}
 
 	if e.Optimizer != "" {
 		fmt.Println("Optimizer status:")
 		fmt.Printf("\t%s\n", e.Optimizer)
-	} else {
-		fmt.Printf("\t-\n")
 	}
 	
 	if e.Runtime > 0 {
@@ -494,7 +606,6 @@ func (e *Explain) PrintDebug() {
 		fmt.Printf("\t%f\n", e.Runtime)
 	}
 
-	fmt.Printf("########## END PRINT DEBUG ##########\n\n")
 }
 
 
@@ -525,6 +636,8 @@ func (e *Explain) InitFromFile(filename string) error {
 			return err
 		}
 	}
+
+	e.BuildTree()
 
 	return nil
 }
