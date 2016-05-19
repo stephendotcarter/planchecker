@@ -217,7 +217,7 @@ func parseNodeRawLines(n *Node) error {
 }
 
 
-func (e *Explain) parseNode(line string) *Node {
+func (e *Explain) createNode(line string) *Node {
 	// Set node indent
 	// Rest of node parsing is handled in parseNodeRawLines
 	node := new(Node)
@@ -236,7 +236,7 @@ func (e *Explain) parseNode(line string) *Node {
 //   ->  Limit  (cost=0.00..0.64 rows=1 width=0)
 //         ->  Seq Scan on pg_attribute c2  (cost=0.00..71.00 rows=112 width=0)
 //               Filter: atttypid = $1
-func (e *Explain) parsePlan(line string) *Plan {
+func (e *Explain) createPlan(line string) *Plan {
 	fmt.Println("PARSE SUBPLAN")
 
 	plan := new(Plan)
@@ -371,11 +371,11 @@ func (e *Explain) parseline(line string) {
 	
 	} else if patterns["NODE"].MatchString(line) {
 		// Parse a new node
-		newNode := e.parseNode(line)
+		newNode := e.createNode(line)
 
 		// If this is the first node then insert the TopPlan also
 		if len(e.Nodes) == 0 {
-			newPlan := e.parsePlan("Plan")
+			newPlan := e.createPlan("Plan")
 			e.Plans = append(e.Plans, newPlan)
 		}
 		
@@ -384,7 +384,7 @@ func (e *Explain) parseline(line string) {
 
 	} else if patterns["SUBPLAN"].MatchString(line) {
 		// Parse a new plan
-		newPlan := e.parsePlan(line)
+		newPlan := e.createPlan(line)
 
 		// Append plan to Plans array
 		e.Plans = append(e.Plans, newPlan)
