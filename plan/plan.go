@@ -479,7 +479,7 @@ func (e *Explain) BuildTree() {
 
 		// Then check for parent nodes
 		for p := i -1; p > -1; p-- {
-			log.Debugf("\t%s\n", e.Nodes[p].Operator)
+			log.Debugf("\t%d %s\n", e.Nodes[p].Indent, e.Nodes[p].Operator)
 			if e.Nodes[i].Indent > e.Nodes[p].Indent {
 				log.Debugf("\t\tFOUND PARENT NODE\n")
 				// Prepend to start of array to keep ordering
