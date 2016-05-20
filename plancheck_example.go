@@ -16,7 +16,7 @@ func main() {
     // Init the explain from filename
     err := explain.InitFromFile(filename)
     if err != nil {
-        fmt.Printf("%s", err)
+        fmt.Printf("%s\n", err)
         os.Exit(1)
     }
 

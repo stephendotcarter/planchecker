@@ -1,6 +1,7 @@
 package plan
 
 import (
+	"os"
 	"fmt"
 	"io/ioutil"
 	"regexp"
@@ -629,7 +630,11 @@ func (e *Explain) InitFromFile(filename string) error {
 	e.InitLogger()
 
 	log.Debugf("InitFromFile\n")
-	// Check file name exists
+
+	// Check file exists
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return err
+	}
 
 	// Read all lines
 	filedata, err := ioutil.ReadFile(filename)
