@@ -619,13 +619,64 @@ func (e *Explain) InitLogger(debug bool) error {
 }
 
 
-func (e *Explain) InitFromString(text string, debug bool) {
+func (e *Explain) InitPlan(plantext string) error {
+
+	// Split the data in to lines
+	e.lines = strings.Split(string(plantext), "\n")
+
+	// Parse lines in to node objects
+	e.parseLines()
+
+	// Node for each node, parse the ExtraInfo
+	for _, n := range e.Nodes {
+		err := parseNodeExtraInfo(n)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Convert array of nodes to tree structure
+	e.BuildTree()
+
+	return nil
+}
+
+
+func (e *Explain) InitFromStdin(debug bool) error {
+	e.InitLogger(debug)
+
+	fmt.Printf("InitFromStdin\n")
+
+	fi, err := os.Stdin.Stat()
+	if err != nil {
+		panic(err)
+	}
+
+	if fi.Size() == 0 {
+		return errors.New("stdin is empty")
+	}
+
+	bytes, _ := ioutil.ReadAll(os.Stdin)
+	plantext := string(bytes)
+	fmt.Println(plantext)
+
+	e.InitPlan(plantext)
+
+	return nil
+}
+
+
+func (e *Explain) InitFromString(plantext string, debug bool) error {
 	e.InitLogger(debug)
 
 	fmt.Printf("InitFromString\n")
-	// Split the data in to lines
-	e.lines = strings.Split(text, "\n")
-	e.parseLines()
+
+	err := e.InitPlan(plantext)
+	if err != nil {
+		return err
+	}
+	
+	return nil
 }
 
 
@@ -645,22 +696,12 @@ func (e *Explain) InitFromFile(filename string, debug bool) error {
 		return err
 	}
 
-	// Split the data in to lines
-	e.lines = strings.Split(string(filedata), "\n")
+	plantext := string(filedata)
 
-	// Parse lines in to node objects
-	e.parseLines()
-
-	// Node for each node, parse the ExtraInfo
-	for _, n := range e.Nodes {
-		err := parseNodeExtraInfo(n)
-		if err != nil {
-			return err
-		}
+	err = e.InitPlan(plantext)
+	if err != nil {
+		return err
 	}
-
-	// Convert array of nodes to tree structure
-	e.BuildTree()
 
 	return nil
 }
