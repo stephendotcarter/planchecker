@@ -14,7 +14,7 @@ func main() {
     var explain plan.Explain
 
     // Init the explain from filename
-    err := explain.InitFromFile(filename)
+    err := explain.InitFromFile(filename, true)
     if err != nil {
         fmt.Printf("%s\n", err)
         os.Exit(1)

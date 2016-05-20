@@ -604,20 +604,23 @@ func (e *Explain) PrintPlan() {
 
 }
 
-func (e *Explain) InitLogger() error {
+func (e *Explain) InitLogger(debug bool) error {
 	var err error
 	log, err = mlogger.NewStdoutOnlyLogger()
 	if err != nil {
 		return err
 	}
 
-	log.EnableDebug()
+	if debug == true {
+		log.EnableDebug()
+	}
+
 	return nil
 }
 
 
-func (e *Explain) InitFromString(text string) {
-	e.InitLogger()
+func (e *Explain) InitFromString(text string, debug bool) {
+	e.InitLogger(debug)
 
 	fmt.Printf("InitFromString\n")
 	// Split the data in to lines
@@ -626,8 +629,8 @@ func (e *Explain) InitFromString(text string) {
 }
 
 
-func (e *Explain) InitFromFile(filename string) error {
-	e.InitLogger()
+func (e *Explain) InitFromFile(filename string, debug bool) error {
+	e.InitLogger(debug)
 
 	log.Debugf("InitFromFile\n")
 
