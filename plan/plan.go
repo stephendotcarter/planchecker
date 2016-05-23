@@ -192,6 +192,17 @@ func (n *Node) checkNodeEstimatedRows() {
 }
 
 
+// Check for Nested Loops
+func (n *Node) checkNodeNestedLoop() {
+	re := regexp.MustCompile(`Nested Loop`)
+	if re.MatchString(n.Operator) {
+		n.Warnings = append(n.Warnings, Warning{
+			"Nested Loop",
+			"Review query"})
+	}
+}
+
+
 // ------------------------------------------------------------
 // Checks relating to the over all Explain output
 // ------------------------------------------------------------
@@ -703,6 +714,7 @@ func (e *Explain) InitPlan(plantext string) error {
 
 		// Run Node checks
 		n.checkNodeEstimatedRows()
+		n.checkNodeNestedLoop()
 	}
 
 	// Run Explain checks
