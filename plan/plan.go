@@ -114,6 +114,7 @@ var (
 	}
 
 	indentDepth = 4 // Used for printing the plan
+	warningColor = 31 // RED
 )
 
 
@@ -581,7 +582,9 @@ func (n *Node) Render(indent int) {
 			n.Width)
 
 	for _, w := range n.Warnings {
-		fmt.Printf("%s   WARNING: %s | %s\n", indentString, w.Cause, w.Resolution)
+		fmt.Printf("\x1b[%dm", warningColor)
+		fmt.Printf("%s     WARNING: %s | %s\n", indentString, w.Cause, w.Resolution)
+		fmt.Printf("\x1b[%dm", 0)
 	}
 	// Render sub nodes
 	for _, s := range n.SubNodes {
@@ -641,11 +644,15 @@ func (e *Explain) PrintPlan() {
 		}
 		*/
 
+	fmt.Printf("\n")
+	
 	for _, w := range e.Warnings {
+		fmt.Printf("\x1b[%dm", warningColor)
 		fmt.Printf("WARNING: %s | %s\n", w.Cause, w.Resolution)
+		fmt.Printf("\x1b[%dm", 0)
 	}
 
-	fmt.Println("")
+	fmt.Printf("\n")
 
 	if len(e.SliceStats) > 0 {
 		fmt.Println("Slice statistics:")
