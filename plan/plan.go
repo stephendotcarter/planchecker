@@ -175,9 +175,17 @@ func parseRowStat(line string) RowStat {
 }
 
 
+// Example data to be parsed
+//   ->  Hash Join  (cost=0.00..862.00 rows=1 width=16)
+//         Hash Cond: public.sales.id = public.sales.year
+//         Rows out:  11000 rows (seg0) with 6897 ms to first row, 7429 ms to end, start offset by 40 ms.
+//         Executor memory:  127501K bytes avg, 127501K bytes max (seg0).
+//         Work_mem used:  127501K bytes avg, 127501K bytes max (seg0). Workfile: (2 spilling, 0 reused)
+//         Work_mem wanted: 171875K bytes avg, 171875K bytes max (seg0) to lessen workfile I/O affecting 2 workers.
 func parseNodeExtraInfo(n *Node) error {
 	// line 0 will always be the node line
-	// Example: ->  Broadcast Motion 1:2  (slice1)  (cost=0.00..27.48 rows=1124 width=208)
+	// Example:
+	//     ->  Broadcast Motion 1:2  (slice1)  (cost=0.00..27.48 rows=1124 width=208)
 	line := n.ExtraInfo[0]
 
 	groups := patterns["NODE"].FindStringSubmatch(line)
