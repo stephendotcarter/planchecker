@@ -24,6 +24,7 @@ type Node struct {
 	ExtraInfo    []string
 	SubNodes     []*Node
 	SubPlans     []*Plan
+	Warnings     []Warning
 }
 
 type Plan struct {
@@ -42,6 +43,11 @@ type RowStat struct {
 	End float64
 	Offset float64
 	Workers int64
+}
+
+type Warning struct {
+	Cause       string
+	Resolution  string
 }
 
 type SliceStat struct {
@@ -71,6 +77,7 @@ type Explain struct {
 	Settings       []Setting
 	Optimizer      string
 	Runtime        float64
+	Warnings       []Warning
 
 	lines        []string
 	lineOffset   int
@@ -512,6 +519,9 @@ func (n *Node) Render(indent int) {
 			n.Rows,
 			n.Width)
 
+	for _, w := range n.Warnings {
+		fmt.Printf("%s   WARNING: %s | %s\n", indentString, w.Cause, w.Resolution)
+	}
 	// Render sub nodes
 	for _, s := range n.SubNodes {
 		s.Render(indent)
@@ -569,6 +579,10 @@ func (e *Explain) PrintPlan() {
 			fmt.Printf("%sRAWLINE: %s\n", thisIndent, strings.Trim(line, " "))
 		}
 		*/
+
+	for _, w := range e.Warnings {
+		fmt.Printf("WARNING: %s | %s\n", w.Cause, w.Resolution)
+	}
 
 	fmt.Println("")
 
