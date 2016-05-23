@@ -175,6 +175,48 @@ func parseRowStat(line string) RowStat {
 }
 
 
+// ------------------------------------------------------------
+// Checks relating to each node
+// ------------------------------------------------------------
+
+// Check Scan nodes to see if estimated rows == 1
+func (n *Node) checkNodeEstimatedRows() {
+	re := regexp.MustCompile(`(Dynamic Table|Table|Parquet table|Bitmap Index|Bitmap Append-Only Row-Oriented|Seq) Scan`)
+	if re.MatchString(n.Operator) {
+		if n.Rows == 1 {
+			n.Warnings = append(n.Warnings, Warning{
+				"Estimated rows is 1",
+				"Check if table has been ANALYZED"})
+		}
+	}
+}
+
+
+// ------------------------------------------------------------
+// Checks relating to the over all Explain output
+// ------------------------------------------------------------
+
+// Check if the number of Broadcast/Redistribute Motion nodes is > 5
+func (e *Explain) checkExplainMotionCount() {
+	motionCount := 0
+	motionCountLimit := 5
+
+	re := regexp.MustCompile(`(Broadcast|Redistribute) Motion`)
+
+	for _, n := range e.Nodes {
+		if re.MatchString(n.Operator) {
+			motionCount++
+		}
+	}
+
+	if motionCount > motionCountLimit {
+		e.Warnings = append(e.Warnings, Warning{
+			fmt.Sprintf("Found %d Redistribute or Broadcast motions", motionCountLimit),
+			"Review query"})
+	}
+}
+
+
 // Example data to be parsed
 //   ->  Hash Join  (cost=0.00..862.00 rows=1 width=16)
 //         Hash Cond: public.sales.id = public.sales.year
