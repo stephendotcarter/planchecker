@@ -691,16 +691,22 @@ func (e *Explain) InitPlan(plantext string) error {
 	// Parse lines in to node objects
 	e.parseLines()
 
-	// Node for each node, parse the ExtraInfo
+	// Convert array of nodes to tree structure
+	e.BuildTree()
+
 	for _, n := range e.Nodes {
+		// Parse ExtraInfo
 		err := parseNodeExtraInfo(n)
 		if err != nil {
 			return err
 		}
+
+		// Run Node checks
+		n.checkNodeEstimatedRows()
 	}
 
-	// Convert array of nodes to tree structure
-	e.BuildTree()
+	// Run Explain checks
+	e.checkExplainMotionCount()
 
 	return nil
 }
