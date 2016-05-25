@@ -643,13 +643,14 @@ func (e *Explain) PrintPlan() {
 			fmt.Printf("%sRAWLINE: %s\n", thisIndent, strings.Trim(line, " "))
 		}
 		*/
-
-	fmt.Printf("\n")
 	
-	for _, w := range e.Warnings {
-		fmt.Printf("\x1b[%dm", warningColor)
-		fmt.Printf("WARNING: %s | %s\n", w.Cause, w.Resolution)
-		fmt.Printf("\x1b[%dm", 0)
+	if len(e.Warnings) > 0 {
+		fmt.Printf("\n")
+		for _, w := range e.Warnings {
+			fmt.Printf("\x1b[%dm", warningColor)
+			fmt.Printf("WARNING: %s | %s\n", w.Cause, w.Resolution)
+			fmt.Printf("\x1b[%dm", 0)
+		}
 	}
 
 	fmt.Printf("\n")
