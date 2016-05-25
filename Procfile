@@ -1,1 +1,1 @@
-web: webservice
+web: planchecker
