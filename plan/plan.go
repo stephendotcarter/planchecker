@@ -366,7 +366,7 @@ func (e *Explain) parseStatementStats(line string) {
 
 	for i := e.lineOffset + 1; i < len(e.lines); i++ {
 		if getIndent(e.lines[i]) > 1 {
-			fmt.Println(e.lines[i])
+			log.Debugf(e.lines[i])
 			if patterns["STATEMENTSTATS_USED"].MatchString(e.lines[i]) {
 				groups := patterns["STATEMENTSTATS_USED"].FindStringSubmatch(e.lines[i])
 				e.StatementStats.MemoryUsed, _ = strconv.ParseInt(strings.TrimSpace(groups[1]), 10, 64)
