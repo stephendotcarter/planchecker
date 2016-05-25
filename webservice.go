@@ -1,6 +1,7 @@
 package main
     
 import (
+    "os"
     "fmt"
     "net/http"
     "io/ioutil"
@@ -60,6 +61,15 @@ func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
+    port := os.Getenv("PORT")
+
+    if port == "" {
+        fmt.Println("PORT env variable not set")
+        os.Exit(0)
+    }
+
+    fmt.Printf("Binding to port %s\n", port)
+
     // Using gorilla/mux as it provides named URL variable parsing
     r := mux.NewRouter()
 
@@ -74,5 +84,5 @@ func main() {
     r.HandleFunc("/plan/", PlanPostHandler)
 
     // Start listening
-    http.ListenAndServe(":8080", r)
+    http.ListenAndServe(":"+port, r)
 }
