@@ -1,0 +1,21 @@
+{
+	"ImportPath": "github.com/pivotal-gss/planchecker",
+	"GoVersion": "go1.5",
+	"GodepVersion": "v71",
+	"Deps": [
+		{
+			"ImportPath": "github.com/gorilla/context",
+			"Comment": "v1.1-2-ga8d44e7",
+			"Rev": "a8d44e7d8e4d532b6a27a02dd82abb31cc1b01bd"
+		},
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Comment": "v1.1-7-g9c19ed5",
+			"Rev": "9c19ed558d5df4da88e2ade9c8940d742aef0e7e"
+		},
+		{
+			"ImportPath": "github.com/pivotal-gss/utils/mlogger",
+			"Rev": "2d12060ef1acdcf5297bf343a7e85db03d409df0"
+		}
+	]
+}
