@@ -832,6 +832,10 @@ func (e *Explain) InitPlan(plantext string) error {
 	// Parse lines in to node objects
 	e.parseLines()
 
+	if len(e.Nodes) == 0 {
+		return errors.New("Could not find any nodes in plan")
+	}
+
 	// Convert array of nodes to tree structure
 	e.BuildTree()
 
