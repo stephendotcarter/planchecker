@@ -1,0 +1,33 @@
+template1=# explain analyze select * from bigtable a, bigtable b where a.col1 = b.col2;
+                                                                      QUERY PLAN                                                                       
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 2:1  (slice2; segments: 2)  (cost=23640.65..12600285.38 rows=1003438952 width=16)
+   Rows out:  1000000 rows at destination with 1630 ms to first row, 3277 ms to end, start offset by 0.703 ms.
+   ->  Hash Join  (cost=23640.65..12600285.38 rows=501719476 width=16)
+         Hash Cond: b.col2 = a.col1
+         Rows out:  1000000 rows (seg1) with 1613 ms to first row, 1915 ms to end, start offset by 17 ms.
+         Executor memory:  488K bytes avg, 491K bytes max (seg0).
+         Work_mem used:  488K bytes avg, 491K bytes max (seg0). Workfile: (2 spilling, 0 reused)
+         Work_mem wanted: 8210K bytes avg, 9723K bytes max (seg0) to lessen workfile I/O affecting 2 workers.
+         (seg0)   Initial batch 0:
+         (seg0)     Wrote 9232K bytes to inner workfile.
+         (seg0)   Hash chain length 3.9 avg, 11 max, using 4018 of 4111 buckets.  Skipped 31 empty batches.
+         ->  Redistribute Motion 2:2  (slice1; segments: 2)  (cost=0.00..31153.54 rows=500859 width=8)
+               Hash Key: b.col2
+               Rows out:  1000000 rows at destination (seg1) with 0.195 ms to first row, 765 ms to end, start offset by 493 ms.
+               ->  Seq Scan on bigtable b  (cost=0.00..11119.18 rows=500859 width=8)
+                     Rows out:  Avg 500000.0 rows x 2 workers.  Max 500001 rows (seg0) with 186 ms to first row, 215 ms to end, start offset by 75 ms.
+         ->  Hash  (cost=11119.18..11119.18 rows=500859 width=8)
+               Rows in:  Avg 15598.0 rows x 2 workers.  Max 15681 rows (seg0) with 445 ms to end, start offset by 77 ms.
+               ->  Seq Scan on bigtable a  (cost=0.00..11119.18 rows=500859 width=8)
+                     Rows out:  Avg 500000.0 rows x 2 workers.  Max 500001 rows (seg0) with 181 ms to first row, 249 ms to end, start offset by 77 ms.
+ Slice statistics:
+   (slice0)    Executor memory: 386K bytes.
+   (slice1)    Executor memory: 207K bytes avg x 2 workers, 207K bytes max (seg0).
+   (slice2)  * Executor memory: 1325K bytes avg x 2 workers, 1387K bytes max (seg1).  Work_mem: 491K bytes max, 9723K bytes wanted.
+ Statement statistics:
+   Memory used: 1024K bytes
+   Memory wanted: 10222K bytes
+ Optimizer status: legacy query optimizer
+ Total runtime: 3321.499 ms
+(29 rows)
