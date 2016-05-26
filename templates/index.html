@@ -33,7 +33,7 @@
     <p>Copy/paste <code>EXPLAIN</code> or <code>EXPLAIN ANALYZE</code> output in to the form and click <code>Submit</code>.</p>
     <div class="row">
         <div class="col-xs-12">
-            <form method="POST" action="/plan/">
+            <form method="POST" action="/plan/" enctype="multipart/form-data">
             <div class="form-group">
                 <textarea class="form-control" name="plantext" id="plantext" rows="20">
 Timing is on.
@@ -127,6 +127,7 @@ Timing is on.
 Time: 36.880 ms
 
                 </textarea>
+                <input type="file" name="uploadfile" />
             </div>
             <button type="submit" class="btn btn-success pull-right">Submit</button>
             </form>

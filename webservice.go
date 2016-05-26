@@ -3,6 +3,7 @@ package main
 import (
     "os"
     "fmt"
+    "bytes"
     "net/http"
     "io/ioutil"
     "github.com/gorilla/mux"
@@ -37,14 +38,34 @@ func PlanHandler(w http.ResponseWriter, r *http.Request) {
 */
 
 func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
-    // Get the plan from the POST form
-    planText := r.FormValue("plantext")
+    var err error
+    var planText string
+    
+    // Attempt to read the uploaded file
+    r.ParseMultipartForm(32 << 20)
+    file, _, err := r.FormFile("uploadfile")
+
+    if err == nil {
+        // If not error then try to read from file
+        defer file.Close()
+        buf := new(bytes.Buffer)
+        n, err := buf.ReadFrom(file)
+        if err != nil {
+            fmt.Printf("Error reading from file upload: %s", err)
+        }
+        fmt.Printf("Read %d bytes from file upload", n)
+        planText = buf.String()
+
+    } else {
+        // Else get the plan from POST textarea
+        planText = r.FormValue("plantext")
+    }
 
     // Create new explain object
     var explain plan.Explain
 
     // Init the explain from string
-    err := explain.InitFromString(planText, true)
+    err = explain.InitFromString(planText, true)
     if err != nil {
         fmt.Fprintf(w, "%s\n", err)
     }
