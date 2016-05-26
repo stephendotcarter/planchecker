@@ -861,7 +861,7 @@ func (e *Explain) InitPlan(plantext string) error {
 func (e *Explain) InitFromStdin(debug bool) error {
 	e.InitLogger(debug)
 
-	fmt.Printf("InitFromStdin\n")
+	log.Debugf("InitFromStdin\n")
 
 	fi, err := os.Stdin.Stat()
 	if err != nil {
@@ -874,7 +874,6 @@ func (e *Explain) InitFromStdin(debug bool) error {
 
 	bytes, _ := ioutil.ReadAll(os.Stdin)
 	plantext := string(bytes)
-	fmt.Println(plantext)
 
 	e.InitPlan(plantext)
 
@@ -885,7 +884,7 @@ func (e *Explain) InitFromStdin(debug bool) error {
 func (e *Explain) InitFromString(plantext string, debug bool) error {
 	e.InitLogger(debug)
 
-	fmt.Printf("InitFromString\n")
+	log.Debugf("InitFromString\n")
 
 	err := e.InitPlan(plantext)
 	if err != nil {
