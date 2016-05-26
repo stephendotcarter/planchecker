@@ -223,7 +223,7 @@ func (e *Explain) checkExplainMotionCount() {
 
 	if motionCount > motionCountLimit {
 		e.Warnings = append(e.Warnings, Warning{
-			fmt.Sprintf("Found %d Redistribute or Broadcast motions", motionCountLimit),
+			fmt.Sprintf("Found %d Redistribute/Broadcast motions", motionCount),
 			"Review query"})
 	}
 }
@@ -611,7 +611,12 @@ func (n *Node) RenderHtml(indent int) string {
 	indent += 1
 	indentString := strings.Repeat(" ", indent * indentDepth)
 	
-	HTML += fmt.Sprintf("%s-> %s | startup cost %s | total cost %s | rows %d | width %d\n",
+	if n.Slice > -1 {
+		HTML += fmt.Sprintf("%s<span class=\"label label-success\">Slice %d</span>\n",
+			indentString,
+			n.Slice)
+	}
+	HTML += fmt.Sprintf("%s<strong>-> %s | startup cost %s | total cost %s | rows %d | width %d</strong>\n",
 			indentString,
 			n.Operator,
 			n.StartupCost,
@@ -619,8 +624,12 @@ func (n *Node) RenderHtml(indent int) string {
 			n.Rows,
 			n.Width)
 
+	for _, e := range n.ExtraInfo[1:] {
+		HTML += fmt.Sprintf("%s   %s\n", indentString, strings.Trim(e, " "))
+	}
+
 	for _, w := range n.Warnings {
-		HTML += fmt.Sprintf("%s     <span class=\"label label-danger\">WARNING: %s | %s</span>\n", indentString, w.Cause, w.Resolution)
+		HTML += fmt.Sprintf("%s   <span class=\"label label-danger\">WARNING: %s | %s</span>\n", indentString, w.Cause, w.Resolution)
 	}
 	// Render sub nodes
 	for _, s := range n.SubNodes {
@@ -723,7 +732,7 @@ func (e *Explain) PrintPlan() {
 	
 	if e.Runtime > 0 {
 		fmt.Println("Total runtime:")
-		fmt.Printf("\t%f\n", e.Runtime)
+		fmt.Printf("\t%.0f ms\n", e.Runtime)
 	}
 
 }
@@ -802,7 +811,7 @@ func (e *Explain) PrintPlanHtml() string {
 	
 	if e.Runtime > 0 {
 		HTML += fmt.Sprintf("<strong>Total runtime:</strong>\n")
-		HTML += fmt.Sprintf("\t%f\n", e.Runtime)
+		HTML += fmt.Sprintf("\t%.0f ms\n", e.Runtime)
 	}
 
 	return HTML
