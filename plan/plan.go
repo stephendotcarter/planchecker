@@ -667,6 +667,10 @@ func (n *Node) Render(indent int) {
 	indent += 1
 	indentString := strings.Repeat(" ", indent * indentDepth)
 	
+	if n.Slice > -1 {
+		fmt.Printf("\n%s   // Slice %d\n", indentString, n.Slice)
+	}
+
 	fmt.Printf("%s-> %s | startup cost %s | total cost %s | rows %d | width %d\n",
 			indentString,
 			n.Operator,
@@ -675,16 +679,24 @@ func (n *Node) Render(indent int) {
 			n.Rows,
 			n.Width)
 
+	// Render ExtraInfo
+	for _, e := range n.ExtraInfo[1:] {
+		fmt.Printf("%s   %s\n", indentString, strings.Trim(e, " "))
+	}
+
+	// Render warnings
 	for _, w := range n.Warnings {
 		fmt.Printf("\x1b[%dm", warningColor)
-		fmt.Printf("%s     WARNING: %s | %s\n", indentString, w.Cause, w.Resolution)
+		fmt.Printf("%s   WARNING: %s | %s\n", indentString, w.Cause, w.Resolution)
 		fmt.Printf("\x1b[%dm", 0)
 	}
+
 	// Render sub nodes
 	for _, s := range n.SubNodes {
 		s.Render(indent)
 	}
 
+	// Render sub plans
 	for _, s := range n.SubPlans {
 		s.Render(indent)
 	}
@@ -706,7 +718,7 @@ func (n *Node) RenderHtml(indent int) string {
 	indentString := strings.Repeat(" ", indent * indentDepth)
 	
 	if n.Slice > -1 {
-		HTML += fmt.Sprintf("%s<span class=\"label label-success\">Slice %d</span>\n",
+		HTML += fmt.Sprintf("%s   <span class=\"label label-success\">Slice %d</span>\n",
 			indentString,
 			n.Slice)
 	}
