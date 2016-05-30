@@ -24,7 +24,7 @@ mike=# EXPLAIN ANALYZE select * from test1 t1 join test2 t2 on t1.a = t2.b where
                      Hash Key: t2.b
                      Rows out:  Avg 2333.5 rows x 2 workers at destination.  Max 3333 rows (seg1) with 29 ms to first row, 33 ms to end, start offset by 16 ms.
                      Memory:  47K bytes avg, 47K bytes max (seg0).
-                     ->  Seq Scan on test2 t2  (cost=0.00..212.00 rows=10 width=8)
+                     ->  Seq Scan on test2 t2  (cost=0.00..212.00 rows=1 width=8)
                            Filter: (b % 7) = 0 OR (a % 3) = 0
                            Rows out:  Avg 2333.5 rows x 2 workers.  Max 2336 rows (seg1) with 37 ms to first row, 38 ms to end, start offset by 9.667 ms.
                            Memory:  73K bytes avg, 73K bytes max (seg0).
