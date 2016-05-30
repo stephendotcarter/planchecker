@@ -12,6 +12,7 @@ import (
 )
 
 type Node struct {
+	// Variables parsed from EXPLAIN
 	Operator     string
 	Indent       int
 	Offset       int
@@ -20,7 +21,23 @@ type Node struct {
 	TotalCost    string
 	Rows         int64
 	Width        int64
-	RowStat      RowStat
+	
+	// Variable parsed from EXPLAIN ANALYZE
+	ActualRows   float64
+	AvgRows      float64
+	Workers      float64
+	MaxRows      float64
+	MaxSeg       float64
+	Scans        float64
+	MsFirst      float64
+	MsEnd        float64
+	MsOffset     float64
+	AvgMem       float64
+	MaxMem       float64
+	ExecMemLine  float64
+	SpillFile    int64
+	SpillReuse   int64
+
 	ExtraInfo    []string
 	SubNodes     []*Node
 	SubPlans     []*Plan
@@ -32,17 +49,6 @@ type Plan struct {
 	Indent   int
 	Offset   int
 	TopNode  *Node
-}
-
-type RowStat struct {
-	InOut string
-	Rows float64
-	Avg float64
-	Max float64
-	First float64
-	End float64
-	Offset float64
-	Workers int64
 }
 
 type Warning struct {
@@ -121,58 +127,6 @@ var (
 // Calculate indent by triming white space and checking diff on string length
 func getIndent(line string) int {
 	return len(line) - len(strings.TrimLeft(line, " "))
-}
-
-
-func parseRowStat(line string) RowStat {
-	var ro RowStat
-
-	ro.InOut = ""
-	ro.Rows = -1
-	ro.Avg = -1
-	ro.Max = -1
-	ro.First = -1
-	ro.End = -1
-	ro.Offset = -1
-	ro.Workers = -1
-
-	line = strings.TrimSpace(line)
-	fmt.Println("\n", line)
-
-	groups := patterns["ROWSTAT"].FindStringSubmatch(line)
-	if len(groups) == 2 {
-		ro.InOut = strings.TrimSpace(groups[1])
-	}
-
-	groups = patterns["ROWSTAT_ROWS"].FindStringSubmatch(line)
-	if len(groups) == 2 {
-		fmt.Println("ROWS", groups)
-		ro.InOut = strings.TrimSpace(groups[1])
-		ro.Rows, _ = strconv.ParseFloat(strings.TrimSpace(groups[2]), 64)
-	}
-
-	groups = patterns["ROWSTAT_AVG"].FindStringSubmatch(line)
-	if len(groups) == 4 {
-	fmt.Println("AVG", groups)
-		ro.Avg, _ = strconv.ParseFloat(strings.TrimSpace(groups[1]), 64)
-		ro.Workers, _ = strconv.ParseInt(strings.TrimSpace(groups[2]), 10, 64)
-		ro.Max, _ = strconv.ParseFloat(strings.TrimSpace(groups[3]), 64)
-	}
-
-	groups = patterns["ROWSTAT_FIRST"].FindStringSubmatch(line)
-	if len(groups) == 2 {
-	fmt.Println("FIRST", groups)
-		ro.First, _ = strconv.ParseFloat(strings.TrimSpace(groups[1]), 64)
-	}
-
-	groups = patterns["ROWSTAT_END_START"].FindStringSubmatch(line)
-	if len(groups) == 3 {
-	fmt.Println("END_START", groups)
-		ro.End, _ = strconv.ParseFloat(strings.TrimSpace(groups[1]), 64)
-		ro.Offset, _ = strconv.ParseFloat(strings.TrimSpace(groups[2]), 64)
-	}
-
-	return ro
 }
 
 
@@ -268,12 +222,152 @@ func parseNodeExtraInfo(n *Node) error {
 	} else {
 		return errors.New("Unable to parse node")
 	}
+
+	// Init everything to -1
+	n.ActualRows   = -1
+	n.AvgRows      = -1
+	n.Workers      = -1
+	n.MaxRows      = -1
+	n.MaxSeg       = -1
+	n.Scans        = -1
+	n.MsFirst      = -1
+	n.MsEnd        = -1
+	n.MsOffset     = -1
+	n.AvgMem       = -1
+	n.MaxMem       = -1
+	n.ExecMemLine  = -1
+	n.SpillFile    = -1
+	n.SpillReuse   = -1
 	
-	// Parse the remaining 
+	// Parse the remaining lines
+	var re *regexp.Regexp
+	var m []string
+
 	for _, line := range n.ExtraInfo[1:] {
-		if patterns["ROWSTAT"].MatchString(line) {
-			n.RowStat = parseRowStat(line)
+		fmt.Println(line)
+
+		// ROWS
+		re = regexp.MustCompile(`ms to end`)
+		if re.MatchString(line) {
+			re = regexp.MustCompile(`(\d+) rows at destination`)
+			m := re.FindStringSubmatch(line)
+			if len(m) == re.NumSubexp() + 1 {
+				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+					n.ActualRows = s
+					fmt.Printf("ActualRows %f\n", n.ActualRows)
+				}
+			}
+
+			re = regexp.MustCompile(`(\d+) rows with \S+ ms`)
+			m = re.FindStringSubmatch(line)
+			if len(m) == re.NumSubexp() + 1 {
+				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+					n.ActualRows = s
+					fmt.Printf("ActualRows %f\n", n.ActualRows)
+				}
+			}
+
+			re = regexp.MustCompile(`Max (\S+) rows`)
+			m = re.FindStringSubmatch(line)
+			if len(m) == re.NumSubexp() + 1 {
+				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+					n.MaxRows = s
+					fmt.Printf("MaxRows %f\n", n.MaxRows)
+				}
+			}
+
+			re = regexp.MustCompile(` (\S+) ms to first row`)
+			m = re.FindStringSubmatch(line)
+			if len(m) == re.NumSubexp() + 1 {
+				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+					n.MsFirst = s
+					fmt.Printf("MsFirst %f\n", n.MsFirst)
+				}
+			}
+
+			re = regexp.MustCompile(` (\S+) ms to end`)
+			m = re.FindStringSubmatch(line)
+			if len(m) == re.NumSubexp() + 1 {
+				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+					n.MsEnd = s
+					fmt.Printf("MsEnd %f\n", n.MsEnd)
+				}
+			}
+
+			re = regexp.MustCompile(`start offset by (\S+) ms`)
+			m = re.FindStringSubmatch(line)
+			if len(m) == re.NumSubexp() + 1 {
+				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+					n.MsOffset = s
+					fmt.Printf("MsOffset %f\n", n.MsOffset)
+				}
+			}
+
+			re = regexp.MustCompile(`Avg (\S+) `)
+			m = re.FindStringSubmatch(line)
+			if len(m) == re.NumSubexp() + 1 {
+				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+					n.AvgRows = s
+					fmt.Printf("AvgRows %f\n", n.AvgRows)
+				}
+			}
+
+			re = regexp.MustCompile(` x (\d+) workers`)
+			m = re.FindStringSubmatch(line)
+			if len(m) == re.NumSubexp() + 1 {
+				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+					n.Workers = s
+					fmt.Printf("Workers %f\n", n.Workers)
+				}
+			}
+
+			re = regexp.MustCompile(`of (\d+) scans`)
+			m = re.FindStringSubmatch(line)
+			if len(m) == re.NumSubexp() + 1 {
+				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+					n.Scans = s
+					fmt.Printf("Scans %f\n", n.Scans)
+				}
+			}
 		}
+
+		// MEMORY
+		re = regexp.MustCompile(`Work_mem used`)
+		if re.MatchString(line) {
+			re = regexp.MustCompile(`Work_mem used:\s+(\d+)K bytes avg`)
+			m = re.FindStringSubmatch(line)
+			if len(m) == re.NumSubexp() + 1 {
+				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+					n.AvgMem = s
+					fmt.Printf("AvgMem %f\n", n.AvgMem)
+				}
+			}
+
+			re = regexp.MustCompile(`\s+(\d+)K bytes max`)
+			m = re.FindStringSubmatch(line)
+			if len(m) == re.NumSubexp() + 1 {
+				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+					n.MaxMem = s
+					fmt.Printf("MaxMem %f\n", n.MaxMem)
+				}
+			}
+		}
+
+		// SPILL
+		re = regexp.MustCompile(`\((\d+) spilling,\s+(\d+) reused\)`)
+		m = re.FindStringSubmatch(line)
+		if len(m) == re.NumSubexp() + 1 {
+			n.SpillFile, _ = strconv.ParseInt(strings.TrimSpace(m[1]), 10, 64)
+			n.SpillReuse, _ = strconv.ParseInt(strings.TrimSpace(m[2]), 10, 64)
+			fmt.Printf("SpillFile %d\n", n.SpillFile)
+			fmt.Printf("SpillReuse %d\n", n.SpillReuse)
+		}
+
+		// #Executor memory:  4978K bytes avg, 39416K bytes max (seg2).
+		// if ( $info_line =~ m/Executor memory:/ ) {
+		//     $exec_mem_line .= $info_line."\n";
+		// }
+
 	}
 
 	return nil
@@ -649,7 +743,7 @@ func (p *Plan) RenderHtml(indent int) string {
 	indent += 1
 	indentString := strings.Repeat(" ", indent * indentDepth)
 
-	HTML += fmt.Sprintf("%s%s\n", indentString, p.Name)
+	HTML += fmt.Sprintf("%s<strong>%s</strong>", indentString, p.Name)
 	HTML += p.TopNode.RenderHtml(indent)
 	return HTML
 }
