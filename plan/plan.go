@@ -42,6 +42,7 @@ type Node struct {
 	SubNodes     []*Node
 	SubPlans     []*Plan
 	Warnings     []Warning
+	IsAnalyzed   bool
 }
 
 type Plan struct {
@@ -248,6 +249,7 @@ func parseNodeExtraInfo(n *Node) error {
 	n.ExecMemLine  = -1
 	n.SpillFile    = -1
 	n.SpillReuse   = -1
+	n.IsAnalyzed   = false
 	
 	// Parse the remaining lines
 	var re *regexp.Regexp
@@ -259,6 +261,7 @@ func parseNodeExtraInfo(n *Node) error {
 		// ROWS
 		re = regexp.MustCompile(`ms to end`)
 		if re.MatchString(line) {
+			n.IsAnalyzed = true
 			re = regexp.MustCompile(`(\d+) rows at destination`)
 			m := re.FindStringSubmatch(line)
 			if len(m) == re.NumSubexp() + 1 {
