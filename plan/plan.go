@@ -275,7 +275,7 @@ func parseNodeExtraInfo(n *Node) error {
 	var m []string
 
 	for _, line := range n.ExtraInfo[1:] {
-		fmt.Println(line)
+		log.Debugf("%s\n", line)
 
 		// ROWS
 		re = regexp.MustCompile(`ms to end`)
@@ -286,7 +286,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp() + 1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.ActualRows = s
-					fmt.Printf("ActualRows %f\n", n.ActualRows)
+					log.Debugf("ActualRows %f\n", n.ActualRows)
 				}
 			}
 
@@ -295,7 +295,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp() + 1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.ActualRows = s
-					fmt.Printf("ActualRows %f\n", n.ActualRows)
+					log.Debugf("ActualRows %f\n", n.ActualRows)
 				}
 			}
 
@@ -304,7 +304,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp() + 1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.MaxRows = s
-					fmt.Printf("MaxRows %f\n", n.MaxRows)
+					log.Debugf("MaxRows %f\n", n.MaxRows)
 				}
 			}
 
@@ -313,7 +313,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp() + 1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.MsFirst = s
-					fmt.Printf("MsFirst %f\n", n.MsFirst)
+					log.Debugf("MsFirst %f\n", n.MsFirst)
 				}
 			}
 
@@ -322,7 +322,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp() + 1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.MsEnd = s
-					fmt.Printf("MsEnd %f\n", n.MsEnd)
+					log.Debugf("MsEnd %f\n", n.MsEnd)
 				}
 			}
 
@@ -331,7 +331,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp() + 1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.MsOffset = s
-					fmt.Printf("MsOffset %f\n", n.MsOffset)
+					log.Debugf("MsOffset %f\n", n.MsOffset)
 				}
 			}
 
@@ -340,7 +340,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp() + 1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.AvgRows = s
-					fmt.Printf("AvgRows %f\n", n.AvgRows)
+					log.Debugf("AvgRows %f\n", n.AvgRows)
 				}
 			}
 
@@ -349,7 +349,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp() + 1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.Workers = s
-					fmt.Printf("Workers %f\n", n.Workers)
+					log.Debugf("Workers %f\n", n.Workers)
 				}
 			}
 
@@ -358,7 +358,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp() + 1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.Scans = s
-					fmt.Printf("Scans %f\n", n.Scans)
+					log.Debugf("Scans %f\n", n.Scans)
 				}
 			}
 		}
@@ -371,7 +371,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp() + 1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.AvgMem = s
-					fmt.Printf("AvgMem %f\n", n.AvgMem)
+					log.Debugf("AvgMem %f\n", n.AvgMem)
 				}
 			}
 
@@ -380,7 +380,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp() + 1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.MaxMem = s
-					fmt.Printf("MaxMem %f\n", n.MaxMem)
+					log.Debugf("MaxMem %f\n", n.MaxMem)
 				}
 			}
 		}
@@ -391,8 +391,8 @@ func parseNodeExtraInfo(n *Node) error {
 		if len(m) == re.NumSubexp() + 1 {
 			n.SpillFile, _ = strconv.ParseInt(strings.TrimSpace(m[1]), 10, 64)
 			n.SpillReuse, _ = strconv.ParseInt(strings.TrimSpace(m[2]), 10, 64)
-			fmt.Printf("SpillFile %d\n", n.SpillFile)
-			fmt.Printf("SpillReuse %d\n", n.SpillReuse)
+			log.Debugf("SpillFile %d\n", n.SpillFile)
+			log.Debugf("SpillReuse %d\n", n.SpillReuse)
 		}
 
 		// #Executor memory:  4978K bytes avg, 39416K bytes max (seg2).
