@@ -37,6 +37,8 @@ type Node struct {
 	ExecMemLine  float64
 	SpillFile    int64
 	SpillReuse   int64
+	PartSelected int64
+	PartTotal    int64
 
 	ExtraInfo    []string
 	SubNodes     []*Node
@@ -185,6 +187,47 @@ func (n *Node) checkNodeScans() {
 }
 
 
+// Check for partition scan
+func (n *Node) checkNodePartitionScans() {
+	// Planner
+	re := regexp.MustCompile(`Append`)
+	if re.MatchString(n.Operator) {
+		// Warn if the Append node has more than 100 subnodes
+		if len(n.SubNodes) > 100  {
+			n.Warnings = append(n.Warnings, Warning{
+				fmt.Sprintf("Detected %d partition scans", len(n.SubNodes)),
+				"Check if partitions can be eliminated"})
+		}
+	}
+
+	// PQO
+	re = regexp.MustCompile(`Partition Selector`)
+	if re.MatchString(n.Operator) {
+		fmt.Println((n.PartSelected * 100 / n.PartTotal))
+
+		// Warn if selected partitions is great than 100
+		if n.PartSelected > 100  {
+			n.Warnings = append(n.Warnings, Warning{
+				fmt.Sprintf("Detected %d partition scans", n.PartSelected),
+				"Check if partitions can be eliminated"})
+		}
+
+		// Warn if selected partitons is 0, may be an issue
+		if n.PartSelected == 0 {
+			n.Warnings = append(n.Warnings, Warning{
+				"Zero partitions selected",
+				"Review query"})
+		// Also warn if greater than 25% of total partitions were selected.
+		// I just chose 25% for now... may need to be adjusted to a more reasonable value
+		} else if (n.PartSelected * 100 / n.PartTotal) > 25 {
+			n.Warnings = append(n.Warnings, Warning{
+				fmt.Sprintf("%d%% (%d out of %d) partitions selected", (n.PartSelected * 100 / n.PartTotal), n.PartSelected, n.PartTotal),
+				"Check if partitions can be eliminated"})
+		}
+	}
+}
+
+
 // ------------------------------------------------------------
 // Checks relating to the over all Explain output
 // ------------------------------------------------------------
@@ -284,6 +327,8 @@ func parseNodeExtraInfo(n *Node) error {
 	n.ExecMemLine  = -1
 	n.SpillFile    = -1
 	n.SpillReuse   = -1
+	n.PartSelected = -1
+	n.PartTotal    = -1
 	n.IsAnalyzed   = false
 	
 	// Parse the remaining lines
@@ -409,6 +454,16 @@ func parseNodeExtraInfo(n *Node) error {
 			n.SpillReuse, _ = strconv.ParseInt(strings.TrimSpace(m[2]), 10, 64)
 			log.Debugf("SpillFile %d\n", n.SpillFile)
 			log.Debugf("SpillReuse %d\n", n.SpillReuse)
+		}
+
+		// PARTITION SELECTED
+		re = regexp.MustCompile(`Partitions selected:  (\d+) \(out of (\d+)\)`)
+		m = re.FindStringSubmatch(line)
+		if len(m) == re.NumSubexp() + 1 {
+			n.PartSelected, _ = strconv.ParseInt(strings.TrimSpace(m[1]), 10, 64)
+			n.PartTotal, _ = strconv.ParseInt(strings.TrimSpace(m[2]), 10, 64)
+			log.Debugf("PartTotal %d\n", n.PartTotal)
+			log.Debugf("PartSelected %d\n", n.PartSelected)
 		}
 
 		// #Executor memory:  4978K bytes avg, 39416K bytes max (seg2).
@@ -1024,6 +1079,7 @@ func (e *Explain) InitPlan(plantext string) error {
 		n.checkNodeNestedLoop()
 		n.checkNodeSpilling()
 		n.checkNodeScans()
+		n.checkNodePartitionScans()
 	}
 
 	// Run Explain checks
