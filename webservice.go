@@ -68,6 +68,7 @@ func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
     err = explain.InitFromString(planText, true)
     if err != nil {
         fmt.Fprintf(w, "%s\n", err)
+        return
     }
 
     // Generate the plan HTML
