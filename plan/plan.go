@@ -158,6 +158,15 @@ func (n *Node) checkNodeNestedLoop() {
 }
 
 
+func (n *Node) checkNodeSpilling() {
+	if n.SpillFile >= 1 {
+		n.Warnings = append(n.Warnings, Warning{
+			fmt.Sprintf("Total %d spilling segments found", n.SpillFile),
+			"Review query"})
+	}
+}
+
+
 // ------------------------------------------------------------
 // Checks relating to the over all Explain output
 // ------------------------------------------------------------
@@ -964,6 +973,7 @@ func (e *Explain) InitPlan(plantext string) error {
 		// Run Node checks
 		n.checkNodeEstimatedRows()
 		n.checkNodeNestedLoop()
+		n.checkNodeSpilling()
 	}
 
 	// Run Explain checks
