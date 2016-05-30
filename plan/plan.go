@@ -66,11 +66,6 @@ type SliceStat struct {
 	WorkMemWanted int64
 }
 
-type StatmentStat struct {
-	MemoryUsed int64
-	MemoryWanted int64
-}
-
 type Setting struct {
 	Name  string
 	Value string
