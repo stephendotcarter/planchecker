@@ -620,22 +620,6 @@ func (e *Explain) parseline(line string) {
 }
 
 
-func (n *Node) renderNode(node Node) string {
-	OUT := ""
-	//OUT += fmt.Sprintf("%s (cost=%s, rows=%d, width=%d)\n", node.Operator, node.Cost, node.Rows, node.Width)
-	OUT += fmt.Sprintf("%s\n", n.Operator)
-	for _, l := range n.ExtraInfo {
-		OUT += fmt.Sprintf(">> %s\n", l)
-	}
-	//OUT += fmt.Sprintf(">> Children: %d\n", len(node.Children))
-	//for _, c := range node.Children {
-	//    OUT += renderNode(*c)
-	//}
-
-	return OUT
-}
-
-
 func (e *Explain) BuildTree() {
 	log.Debugf("########## START BUILD TREE ##########\n")
 
