@@ -165,6 +165,7 @@ func (n *Node) checkNodeNestedLoop() {
 }
 
 
+// Check for spill files
 func (n *Node) checkNodeSpilling() {
 	if n.SpillFile >= 1 {
 		n.Warnings = append(n.Warnings, Warning{
@@ -174,6 +175,7 @@ func (n *Node) checkNodeSpilling() {
 }
 
 
+// Check for scan loops
 func (n *Node) checkNodeScans() {
 	if n.Scans > 1 {
 		n.Warnings = append(n.Warnings, Warning{
@@ -420,6 +422,8 @@ func parseNodeExtraInfo(n *Node) error {
 }
 
 
+// ------------------------------------------------------------
+// ->  Seq Scan on sales_1_prt_outlying_years sales  (cost=0.00..67657.90 rows=2477 width=8)
 func (e *Explain) createNode(line string) *Node {
 	log.Debugf("createNode\n")
 	// Set node indent
@@ -440,6 +444,7 @@ func (e *Explain) createNode(line string) *Node {
 //   ->  Limit  (cost=0.00..0.64 rows=1 width=0)
 //         ->  Seq Scan on pg_attribute c2  (cost=0.00..71.00 rows=112 width=0)
 //               Filter: atttypid = $1
+//
 func (e *Explain) createPlan(line string) *Plan {
 	log.Debugf("createPlan\n")
 
@@ -566,6 +571,7 @@ func (e *Explain) parseLines() {
 }
 
 
+// Parse each line
 func (e *Explain) parseline(line string) {
 	indent := getIndent(line)
 
@@ -620,6 +626,20 @@ func (e *Explain) parseline(line string) {
 }
 
 
+// Populate SubNodes/SubPlans arrays for each node, which results
+// in a tree structre with Plans[0] being the top most object:
+// Plans[0]:
+//   topnode:
+//     subnodes:
+//       node:
+//         subnodes:
+//           node:
+//         subplans:
+//     subplans:
+//       plan:
+//         topnode:
+//           etc...
+//
 func (e *Explain) BuildTree() {
 	log.Debugf("########## START BUILD TREE ##########\n")
 
@@ -693,6 +713,7 @@ func (e *Explain) BuildTree() {
 }
 
 
+// Render node for output to console
 func (n *Node) Render(indent int) {
 	indent += 1
 	indentString := strings.Repeat(" ", indent * indentDepth)
@@ -733,6 +754,7 @@ func (n *Node) Render(indent int) {
 }
 
 
+// Render plan for output to console
 func (p *Plan) Render(indent int) {
 	indent += 1
 	indentString := strings.Repeat(" ", indent * indentDepth)
@@ -742,6 +764,7 @@ func (p *Plan) Render(indent int) {
 }
 
 
+// Render node for output to HTML
 func (n *Node) RenderHtml(indent int) string {
 	HTML := ""
 	indent += 1
@@ -780,6 +803,7 @@ func (n *Node) RenderHtml(indent int) string {
 }
 
 
+// Render plan for output to console
 func (p *Plan) RenderHtml(indent int) string {
 	HTML := ""
 	indent += 1
@@ -791,6 +815,7 @@ func (p *Plan) RenderHtml(indent int) string {
 }
 
 
+// Render explain for output to console
 func (e *Explain) PrintPlan() {
 
 	fmt.Println("Plan:")
@@ -874,6 +899,7 @@ func (e *Explain) PrintPlan() {
 }
 
 
+// Render explain for output to HTML
 func (e *Explain) PrintPlanHtml() string {
 	HTML := ""
 	HTML += fmt.Sprintf("<strong>Plan:</strong>\n")
@@ -954,6 +980,7 @@ func (e *Explain) PrintPlanHtml() string {
 }
 
 
+// Initialize logger
 func (e *Explain) InitLogger(debug bool) error {
 	var err error
 	log, err = mlogger.NewStdoutOnlyLogger()
@@ -969,6 +996,7 @@ func (e *Explain) InitLogger(debug bool) error {
 }
 
 
+// Main init function
 func (e *Explain) InitPlan(plantext string) error {
 
 	// Split the data in to lines
@@ -1006,6 +1034,8 @@ func (e *Explain) InitPlan(plantext string) error {
 }
 
 
+// Init from stdin (useful for psql -f myquery.sql > planchecker)
+// planchecker will handle reading from stdin
 func (e *Explain) InitFromStdin(debug bool) error {
 	e.InitLogger(debug)
 
@@ -1029,6 +1059,7 @@ func (e *Explain) InitFromStdin(debug bool) error {
 }
 
 
+// Init from string
 func (e *Explain) InitFromString(plantext string, debug bool) error {
 	e.InitLogger(debug)
 
@@ -1043,6 +1074,7 @@ func (e *Explain) InitFromString(plantext string, debug bool) error {
 }
 
 
+// Init from file
 func (e *Explain) InitFromFile(filename string, debug bool) error {
 	e.InitLogger(debug)
 
