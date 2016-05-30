@@ -28,7 +28,7 @@ type Node struct {
 	Workers      float64
 	MaxRows      float64
 	MaxSeg       float64
-	Scans        float64
+	Scans        int64
 	MsFirst      float64
 	MsEnd        float64
 	MsOffset     float64
@@ -174,6 +174,15 @@ func (n *Node) checkNodeSpilling() {
 	if n.SpillFile >= 1 {
 		n.Warnings = append(n.Warnings, Warning{
 			fmt.Sprintf("Total %d spilling segments found", n.SpillFile),
+			"Review query"})
+	}
+}
+
+
+func (n *Node) checkNodeScans() {
+	if n.Scans > 1 {
+		n.Warnings = append(n.Warnings, Warning{
+			fmt.Sprintf("This node is executed %d times", n.Scans),
 			"Review query"})
 	}
 }
@@ -366,7 +375,7 @@ func parseNodeExtraInfo(n *Node) error {
 			re = regexp.MustCompile(`of (\d+) scans`)
 			m = re.FindStringSubmatch(line)
 			if len(m) == re.NumSubexp() + 1 {
-				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+				if s, err := strconv.ParseInt(m[1], 10, 64); err == nil {
 					n.Scans = s
 					log.Debugf("Scans %f\n", n.Scans)
 				}
@@ -1007,6 +1016,7 @@ func (e *Explain) InitPlan(plantext string) error {
 		n.checkNodeEstimatedRows()
 		n.checkNodeNestedLoop()
 		n.checkNodeSpilling()
+		n.checkNodeScans()
 	}
 
 	// Run Explain checks
