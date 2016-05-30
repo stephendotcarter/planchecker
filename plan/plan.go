@@ -11,11 +11,14 @@ import (
 	"github.com/pivotal-gss/utils/mlogger"
 )
 
+// Represents a node (anything indented with "->" in the plan)
 type Node struct {
-	// Variables parsed from EXPLAIN
-	Operator     string
+	// Location in the file used to build the tree
 	Indent       int
 	Offset       int
+	
+	// Variables parsed from EXPLAIN
+	Operator     string
 	Slice        int64
 	StartupCost  string
 	TotalCost    string
@@ -40,13 +43,21 @@ type Node struct {
 	PartSelected int64
 	PartTotal    int64
 
+	// Contains all the text lines below each node
 	ExtraInfo    []string
+
+	 // Populated in BuildTree() to link nodes/plans together
 	SubNodes     []*Node
 	SubPlans     []*Plan
+
+	// Populated with any warning for the node
 	Warnings     []Warning
+
+	// Flag to detect if we are looking at EXPLAIN or EXPLAIN ANALYZE output
 	IsAnalyzed   bool
 }
 
+// Each plan has a top node
 type Plan struct {
 	Name     string
 	Indent   int
@@ -54,11 +65,13 @@ type Plan struct {
 	TopNode  *Node
 }
 
+// Warnings get added to the overall Explain object or a Node object
 type Warning struct {
-	Cause       string
-	Resolution  string
+	Cause       string // What caused the warning
+	Resolution  string // What should be done to resolve it
 }
 
+// Slice stats parsed from EXPLAIN ANALYZE output
 type SliceStat struct {
 	Name string
 	MemoryAvg int64
@@ -68,20 +81,24 @@ type SliceStat struct {
 	WorkMemWanted int64
 }
 
+// GUCs are parsed so can do checks for specific settings
 type Setting struct {
 	Name  string
 	Value string
 }
 
+// Top level object
 type Explain struct {
-	Nodes          []*Node
-	Plans          []*Plan
+	Nodes          []*Node // All nodes get added here
+	Plans          []*Plan // All plans get added here
 	SliceStats     []string
 	MemoryUsed     int64
 	MemoryWanted   int64
 	Settings       []Setting
 	Optimizer      string
 	Runtime        float64
+
+	// Populated with any warning for the overall EXPLAIN output
 	Warnings       []Warning
 
 	lines        []string
