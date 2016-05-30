@@ -79,7 +79,8 @@ type Explain struct {
 	Nodes          []*Node
 	Plans          []*Plan
 	SliceStats     []string
-	StatementStats StatmentStat
+	MemoryUsed     int64
+	MemoryWanted   int64
 	Settings       []Setting
 	Optimizer      string
 	Runtime        float64
@@ -464,18 +465,18 @@ func (e *Explain) parseStatementStats(line string) {
 	log.Debugf("parseStatementStats\n")
 	e.planFinished = true
 	
-	e.StatementStats.MemoryUsed = -1
-	e.StatementStats.MemoryWanted = -1
+	e.MemoryUsed = -1
+	e.MemoryWanted = -1
 
 	for i := e.lineOffset + 1; i < len(e.lines); i++ {
 		if getIndent(e.lines[i]) > 1 {
 			log.Debugf(e.lines[i])
 			if patterns["STATEMENTSTATS_USED"].MatchString(e.lines[i]) {
 				groups := patterns["STATEMENTSTATS_USED"].FindStringSubmatch(e.lines[i])
-				e.StatementStats.MemoryUsed, _ = strconv.ParseInt(strings.TrimSpace(groups[1]), 10, 64)
+				e.MemoryUsed, _ = strconv.ParseInt(strings.TrimSpace(groups[1]), 10, 64)
 			} else if patterns["STATEMENTSTATS_WANTED"].MatchString(e.lines[i]) {
 				groups := patterns["STATEMENTSTATS_WANTED"].FindStringSubmatch(e.lines[i])
-				e.StatementStats.MemoryWanted, _ = strconv.ParseInt(strings.TrimSpace(groups[1]), 10, 64)
+				e.MemoryWanted, _ = strconv.ParseInt(strings.TrimSpace(groups[1]), 10, 64)
 			}
 		} else {
 			e.lineOffset = i - 1
@@ -827,10 +828,10 @@ func (e *Explain) PrintPlan() {
 		}
 	}
 
-	if e.StatementStats.MemoryUsed > 0 {
+	if e.MemoryUsed > 0 {
 		fmt.Println("Statement statistics:")
-		fmt.Printf("\tMemory used: %d\n", e.StatementStats.MemoryUsed)
-		fmt.Printf("\tMemory wanted: %d\n", e.StatementStats.MemoryWanted)
+		fmt.Printf("\tMemory used: %d\n", e.MemoryUsed)
+		fmt.Printf("\tMemory wanted: %d\n", e.MemoryWanted)
 	}
 	
 	if len(e.Settings) > 0 {
@@ -906,10 +907,10 @@ func (e *Explain) PrintPlanHtml() string {
 		}
 	}
 
-	if e.StatementStats.MemoryUsed > 0 {
+	if e.MemoryUsed > 0 {
 		HTML += fmt.Sprintf("<strong>Statement statistics:</strong>\n")
-		HTML += fmt.Sprintf("\tMemory used: %d\n", e.StatementStats.MemoryUsed)
-		HTML += fmt.Sprintf("\tMemory wanted: %d\n", e.StatementStats.MemoryWanted)
+		HTML += fmt.Sprintf("\tMemory used: %d\n", e.MemoryUsed)
+		HTML += fmt.Sprintf("\tMemory wanted: %d\n", e.MemoryWanted)
 	}
 	
 	if len(e.Settings) > 0 {
