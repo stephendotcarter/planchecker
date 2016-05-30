@@ -194,6 +194,25 @@ func (e *Explain) checkExplainMotionCount() {
 }
 
 
+// Check if the number of slices is > 100
+func (e *Explain) checkExplainSliceCount() {
+	sliceCount := 0
+	sliceCountLimit := 100
+
+	for _, n := range e.Nodes {
+		if n.Slice > -1 {
+			sliceCount++
+		}
+	}
+
+	if sliceCount > sliceCountLimit {
+		e.Warnings = append(e.Warnings, Warning{
+			fmt.Sprintf("Found %d slices", sliceCount),
+			"Review query"})
+	}
+}
+
+
 // Example data to be parsed
 //   ->  Hash Join  (cost=0.00..862.00 rows=1 width=16)
 //         Hash Cond: public.sales.id = public.sales.year
@@ -982,6 +1001,7 @@ func (e *Explain) InitPlan(plantext string) error {
 
 	// Run Explain checks
 	e.checkExplainMotionCount()
+	e.checkExplainSliceCount()
 
 	return nil
 }
