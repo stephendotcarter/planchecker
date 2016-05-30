@@ -141,9 +141,19 @@ func (n *Node) checkNodeEstimatedRows() {
 	re := regexp.MustCompile(`(Dynamic Table|Table|Parquet table|Bitmap Index|Bitmap Append-Only Row-Oriented|Seq) Scan`)
 	if re.MatchString(n.Operator) {
 		if n.Rows == 1 {
-			n.Warnings = append(n.Warnings, Warning{
-				"Estimated rows is 1",
-				"Check if table has been ANALYZED"})
+			// If EXPLAIN ANALYZE output then have to check further
+			if n.IsAnalyzed == true {
+				if n.ActualRows > 1 || n.AvgRows > 1 {
+					n.Warnings = append(n.Warnings, Warning{
+						"Rows stats are higher than estimated",
+						"Table has NOT been ANALYZED"})
+				}
+			// Else just flag as a potential not analyzed table
+			} else {
+				n.Warnings = append(n.Warnings, Warning{
+					"Estimated rows is 1",
+					"Check if table has been ANALYZED"})
+			}
 		}
 	}
 }
