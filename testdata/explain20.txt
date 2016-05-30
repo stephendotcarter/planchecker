@@ -1,0 +1,25 @@
+template1=# EXPLAIN analyze select * from sales where date > '2008-03-01';
+                                             QUERY PLAN                                              
+-----------------------------------------------------------------------------------------------------
+ Gather Motion 2:1  (slice1; segments: 2)  (cost=0.00..431.00 rows=1 width=16)
+   Rows out:  0 rows at destination with 125 ms to end, start offset by 0.986 ms.
+   ->  Sequence  (cost=0.00..431.00 rows=1 width=16)
+         Rows out:  0 rows (seg0) with 111 ms to end, start offset by 14 ms.
+         ->  Partition Selector for sales (dynamic scan id: 1)  (cost=10.00..100.00 rows=50 width=4)
+               Filter: date > '2008-03-01'::date
+               Partitions selected:  306 (out of 366)
+               Rows out:  0 rows (seg0) with 0.025 ms to end, start offset by 13 ms.
+         ->  Dynamic Table Scan on sales (dynamic scan id: 1)  (cost=0.00..431.00 rows=1 width=16)
+               Filter: date > '2008-03-01'::date
+               Rows out:  0 rows (seg0) with 111 ms to end, start offset by 14 ms.
+               Partitions scanned:  Avg 306.0 (out of 366) x 2 workers.  Max 306 parts (seg0).
+ Slice statistics:
+   (slice0)    Executor memory: 382K bytes.
+   (slice1)    Executor memory: 657K bytes avg x 2 workers, 657K bytes max (seg0).
+ Statement statistics:
+   Memory used: 128000K bytes
+ Settings:  optimizer=on
+ Optimizer status: PQO version 1.629
+ Total runtime: 126.389 ms
+(20 rows)
+
