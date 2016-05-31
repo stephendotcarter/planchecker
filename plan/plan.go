@@ -113,12 +113,6 @@ var (
 		"NODE":               regexp.MustCompile(`(.*) \(cost=(.*)\.\.(.*) rows=(.*) width=(.*)\)`),
 		"SLICE":              regexp.MustCompile(`(.*)  \(slice([0-9]*)`),
 		"SUBPLAN":            regexp.MustCompile(` SubPlan `),
-		
-		"ROWSTAT":            regexp.MustCompile(`Rows (out|in): `),
-		"ROWSTAT_ROWS":       regexp.MustCompile(`Rows (out|in):  ([0-9.-]{1,}) rows`),
-		"ROWSTAT_AVG":        regexp.MustCompile(`Avg ([0-9.-]{1,}) rows x ([0-9.-]{1,}) workers.*  Max ([0-9.-]{1,}) rows`),
-		"ROWSTAT_FIRST":      regexp.MustCompile(`with ([0-9.-]{1,}) ms to first`),
-		"ROWSTAT_END_START":  regexp.MustCompile(` ([0-9.-]{1,}) ms to end, start offset by (.*) ms.`),
 
 		"SLICESTATS":           regexp.MustCompile(` Slice statistics:`),
 		"SLICESTATS_1":         regexp.MustCompile(`\((slice[0-9]{1,})\).*Executor memory: ([0-9]{1,})K bytes`),
