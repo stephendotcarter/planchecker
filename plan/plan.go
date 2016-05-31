@@ -30,7 +30,7 @@ type Node struct {
 	AvgRows      float64
 	Workers      int64
 	MaxRows      float64
-	MaxSeg       float64
+	MaxSeg       string
 	Scans        int64
 	MsFirst      float64
 	MsEnd        float64
@@ -328,7 +328,7 @@ func parseNodeExtraInfo(n *Node) error {
 	n.AvgRows      = -1
 	n.Workers      = -1
 	n.MaxRows      = -1
-	n.MaxSeg       = -1
+	n.MaxSeg       = "-"
 	n.Scans        = -1
 	n.MsFirst      = -1
 	n.MsEnd        = -1
@@ -431,6 +431,34 @@ func parseNodeExtraInfo(n *Node) error {
 				if s, err := strconv.ParseInt(m[1], 10, 64); err == nil {
 					n.Scans = s
 					log.Debugf("Scans %f\n", n.Scans)
+				}
+			}
+
+			re = regexp.MustCompile(` \((seg\d+)\) `)
+			m = re.FindStringSubmatch(line)
+			if len(m) == re.NumSubexp() + 1 {
+				n.MaxSeg = m[1]
+				log.Debugf("MaxSeg %s\n", n.MaxSeg)
+			}
+
+			re = regexp.MustCompile(`Max (\S+) rows \(`)
+			m = re.FindStringSubmatch(line)
+			if len(m) == re.NumSubexp() + 1 {
+				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+					n.MaxRows = s
+				}
+				log.Debugf("MaxRows %f\n", n.MaxRows)
+			
+			} else {
+				// Only execute this if "Max" was not found
+				re = regexp.MustCompile(` (\S+) rows \(`)
+				m = re.FindStringSubmatch(line)
+				if len(m) == re.NumSubexp() + 1 {
+					if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+						n.ActualRows = s
+						log.Debugf("Scans %f\n", n.Scans)
+					}
+					log.Debugf("ActualRows %f\n", n.ActualRows)
 				}
 			}
 		}
