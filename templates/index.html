@@ -30,12 +30,11 @@
 </nav>
 
 <div class="container-fluid">
-    <p>Copy/paste <code>EXPLAIN</code> or <code>EXPLAIN ANALYZE</code> output in to the form and click <code>Submit</code>.</p>
+    <p><code>Copy/paste</code> or <code>Choose File</code> and click <code>Submit</code>.</p>
+    <form method="POST" action="/plan/" enctype="multipart/form-data">
     <div class="row">
         <div class="col-xs-12">
-            <form method="POST" action="/plan/" enctype="multipart/form-data">
-            <div class="form-group">
-                <textarea class="form-control" name="plantext" id="plantext" rows="20">
+                <textarea class="form-control" name="plantext" id="plantext" rows="20" style="margin-bottom:10px">
 Timing is on.
                                                                                              QUERY PLAN                                                                                              
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -125,14 +124,22 @@ Timing is on.
 (10792 rows)
 
 Time: 36.880 ms
-
                 </textarea>
-                <input type="file" name="uploadfile" />
-            </div>
-            <button type="submit" class="btn btn-success pull-right">Submit</button>
-            </form>
         </div>
     </div>
+    <div class="row">
+      <div class="col-xs-12">
+        <label class="btn btn-default btn-file">
+        Choose File <input type="file" name="uploadfile" style="display: none;" onchange="$('#upload-file-info').html($(this).prop('files')[0]['name'] );">
+        </label>
+        <span class='label label-info' id="upload-file-info"></span>
+        <button type="submit" class="btn btn-success pull-right">Submit</button>
+      </div>
+    </div>
+    </form>
 </div>
+
+<script   src="https://code.jquery.com/jquery-2.2.4.min.js"   integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="   crossorigin="anonymous"></script>
+
 </body>
 </html>
