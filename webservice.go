@@ -87,7 +87,7 @@ func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
 
 // Render node for output to HTML
 func RenderNodeHtml(n *plan.Node, indent int) string {
-    HTML := ""
+    HTML := "<tr><td>"
     indent += 1
     indentString := strings.Repeat(" ", indent * indentDepth)
     
@@ -96,13 +96,11 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
             indentString,
             n.Slice)
     }
-    HTML += fmt.Sprintf("%s<strong>-> %s | startup cost %s | total cost %s | rows %d | width %d</strong>\n",
-            indentString,
-            n.Operator,
-            n.StartupCost,
-            n.TotalCost,
-            n.Rows,
-            n.Width)
+    //HTML += fmt.Sprintf("%s<strong>-> %s | startup cost %s | total cost %s | rows %d | width %d</strong>\n",
+    HTML += fmt.Sprintf("%s<strong>-> %s</strong>\n",
+        indentString,
+        n.Operator,
+    )
 
     for _, e := range n.ExtraInfo[1:] {
         HTML += fmt.Sprintf("%s   %s\n", indentString, strings.Trim(e, " "))
@@ -111,6 +109,41 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
     for _, w := range n.Warnings {
         HTML += fmt.Sprintf("%s   <span class=\"label label-danger\">WARNING: %s | %s</span>\n", indentString, w.Cause, w.Resolution)
     }
+
+    HTML += "</td>"
+
+    HTML += fmt.Sprintf("<td class=\"text-right\">%s</td><td class=\"text-right\">%s</td><td class=\"text-right\">%d</td><td class=\"text-right\">%d</td>\n",
+        n.StartupCost,
+        n.TotalCost,
+        n.Rows,
+        n.Width)
+
+    if n.IsAnalyzed == true {
+        if n.ActualRows > -1 {
+            HTML += fmt.Sprintf("<td class=\"text-right\">%.2f</td><td class=\"text-right\">%.2f</td><td class=\"text-right\">%.2f</td><td class=\"text-right\">%.2f</td><td class=\"text-right\">%s</td><td class=\"text-right\">%s</td><td class=\"text-right\">%s</td><td class=\"text-right\">%s</td>\n",
+                n.MsFirst,
+                n.MsEnd,
+                n.MsOffset,
+                n.ActualRows,
+                "-",
+                "-",
+                "-",
+                "-")
+        } else {
+            HTML += fmt.Sprintf("<td class=\"text-right\">%.2f</td><td class=\"text-right\">%.2f</td><td class=\"text-right\">%.2f</td><td class=\"text-right\">%s</td><td class=\"text-right\">%.2f</td><td class=\"text-right\">%d</td><td class=\"text-right\">%.2f</td><td class=\"text-right\">%.2f</td>\n",
+                n.MsFirst,
+                n.MsEnd,
+                n.MsOffset,
+                "-",
+                n.AvgRows,
+                n.Workers,
+                n.MaxRows,
+                n.MaxSeg)
+        }
+    }
+
+    HTML += "</tr>"
+
     // Render sub nodes
     for _, s := range n.SubNodes {
         HTML += RenderNodeHtml(s, indent)
@@ -129,49 +162,24 @@ func RenderPlanHtml(p *plan.Plan, indent int) string {
     indent += 1
     indentString := strings.Repeat(" ", indent * indentDepth)
 
-    HTML += fmt.Sprintf("%s<strong>%s</strong>", indentString, p.Name)
+    HTML += fmt.Sprintf("<tr><td>%s<strong>%s</strong></td></tr>", indentString, p.Name)
     HTML += RenderNodeHtml(p.TopNode, indent)
     return HTML
 }
 
 func RenderExplainHtml(e *plan.Explain) string {
     HTML := ""
-    HTML += fmt.Sprintf("<strong>Plan:</strong>\n")
+    HTML += `<table class="table table-condensed table-striped table-bordered">`
+    HTML += "<tr>"
+    HTML += "<th>Query Plan:</th><th class=\"text-right\">Startup Cost</th><th class=\"text-right\">Total Cost</th><th class=\"text-right\">~Rows</th><th class=\"text-right\">Width</th>"
+    if e.Plans[0].TopNode.IsAnalyzed == true {
+        HTML += "<th class=\"text-right\">First/ms</th><th class=\"text-right\">End/ms</th><th class=\"text-right\">Offset/ms</th>"
+        HTML += "<th class=\"text-right\">Actual Rows</th><th class=\"text-right\">Avg Rows</th><th class=\"text-right\">Workers</th><th class=\"text-right\">Max Rows</th><th class=\"text-right\">Max Seg</th>"
+    }
+    HTML += "</tr>\n"
     HTML += RenderNodeHtml(e.Plans[0].TopNode, 0)
+    HTML += `</table>`
     
-    /*
-        if node.Slice > -1 {
-            fmt.Printf("%sSLICE: slice %d\n",
-                thisIndent,
-                node.Slice)
-        }
-
-        for _, n := range node.SubNodes {
-            fmt.Printf("%sSUBNODE: %s\n", thisIndent, n.Operator)
-        }
-
-        for _, p := range node.SubPlans {
-            fmt.Printf("%sSUBPLAN: %s\n", thisIndent, p.Name)
-        }
-    */
-        /*
-        fmt.Printf("%sInOut %s | Rows %f | Avg %f | Max %f | Workers %d | First %f | End %f | Offset %f\n",
-            thisIndent,
-            node.RowStat.InOut,
-            node.RowStat.Rows,
-            node.RowStat.Avg,
-            node.RowStat.Max,
-            node.RowStat.Workers,
-            node.RowStat.First,
-            node.RowStat.End,
-            node.RowStat.Offset)
-        */
-
-        /*
-        for _, line := range node.ExtraInfo {
-            fmt.Printf("%sRAWLINE: %s\n", thisIndent, strings.Trim(line, " "))
-        }
-        */
 
     if len(e.Warnings) > 0 {
         HTML += fmt.Sprintf("<strong>Warnings:</strong>\n")
