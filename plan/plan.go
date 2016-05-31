@@ -28,7 +28,7 @@ type Node struct {
 	// Variable parsed from EXPLAIN ANALYZE
 	ActualRows   float64
 	AvgRows      float64
-	Workers      float64
+	Workers      int64
 	MaxRows      float64
 	MaxSeg       float64
 	Scans        int64
@@ -419,9 +419,9 @@ func parseNodeExtraInfo(n *Node) error {
 			re = regexp.MustCompile(` x (\d+) workers`)
 			m = re.FindStringSubmatch(line)
 			if len(m) == re.NumSubexp() + 1 {
-				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+				if s, err := strconv.ParseInt(m[1], 10, 64); err == nil {
 					n.Workers = s
-					log.Debugf("Workers %f\n", n.Workers)
+					log.Debugf("Workers %d\n", n.Workers)
 				}
 			}
 
