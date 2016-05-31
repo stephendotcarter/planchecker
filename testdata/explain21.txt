@@ -1,0 +1,102 @@
+                                                                                                                 QUERY PLAN                                            
+                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------
+ Aggregate  (cost=97562908.67..97562908.68 rows=1 width=8)
+   Rows out:  1 rows with 661962 ms to end, start offset by 433 ms.
+   ->  Gather Motion 84:1  (slice1; segments: 84)  (cost=97562907.80..97562908.66 rows=1 width=8)
+         Rows out:  84 rows at destination with 391661 ms to first row, 661961 ms to end, start offset by 433 ms.
+         ->  Aggregate  (cost=97562907.80..97562907.81 rows=1 width=8)
+               Rows out:  Avg 1.0 rows x 84 workers.  Max 1 rows (seg0) with 405866 ms to end, start offset by -8057 ms.
+               ->  Append  (cost=0.00..97562855.32 rows=250 width=0)
+                     Rows out:  Avg 11.5 rows x 84 workers.  Max 22 rows (seg13) with 36581 ms to first row, 412834 ms to end, start offset by -6868 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_7 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..4920544.60 rows=15 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.0 rows x 4 workers.  Max 1 rows (seg25) with 21660 ms to first row, 27159 ms to end, start offset by -5232 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_8 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..4651115.16 rows=15 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.1 rows x 14 workers.  Max 2 rows (seg77) with 5756 ms to first row, 18085 ms to end, start offset by 6630 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_9 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5249318.76 rows=14 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.2 rows x 47 workers.  Max 2 rows (seg10) with 8316 ms to first row, 21261 ms to end, start offset by 28765 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_10 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5317583.82 rows=13 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.6 rows x 41 workers.  Max 6 rows (seg15) with 4602 ms to first row, 21589 ms to end, start offset by 54161 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_11 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5247253.52 rows=13 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.2 rows x 48 workers.  Max 3 rows (seg18) with 4964 ms to first row, 19835 ms to end, start offset by 69600 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_12 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5293173.08 rows=13 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.5 rows x 48 workers.  Max 3 rows (seg9) with 3279 ms to first row, 20014 ms to end, start offset by 89179 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_13 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..4751376.38 rows=14 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.1 rows x 19 workers.  Max 2 rows (seg8) with 6516 ms to first row, 19841 ms to end, start offset by 111671 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_14 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..4619200.54 rows=14 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.2 rows x 23 workers.  Max 2 rows (seg13) with 10613 ms to first row, 20008 ms to end, start offset by 140476 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_15 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5187240.42 rows=13 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.6 rows x 44 workers.  Max 5 rows (seg9) with 12196 ms to first row, 20593 ms to end, start offset by 146545 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_16 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5186619.10 rows=13 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.6 rows x 47 workers.  Max 4 rows (seg72) with 7919 ms to first row, 20323 ms to end, start offset by 169447 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_17 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5281412.68 rows=13 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.4 rows x 50 workers.  Max 3 rows (seg27) with 5277 ms to first row, 20656 ms to end, start offset by 193889 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_18 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5123930.16 rows=13 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.3 rows x 43 workers.  Max 3 rows (seg6) with 5798 ms to first row, 20120 ms to end, start offset by 219499 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_19 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5385189.08 rows=13 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.1 rows x 15 workers.  Max 2 rows (seg71) with 19773 ms to first row, 21842 ms to end, start offset by 234339 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_20 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..4986665.22 rows=14 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.2 rows x 23 workers.  Max 2 rows (seg20) with 15374 ms to first row, 20079 ms to end, start offset by 259665 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_21 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..4665402.82 rows=14 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.2 rows x 23 workers.  Max 2 rows (seg5) with 9586 ms to first row, 20313 ms to end, start offset by 278533 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_22 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5388767.72 rows=13 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.7 rows x 51 workers.  Max 4 rows (seg22) with 6543 ms to first row, 28620 ms to end, start offset by 299722 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_23 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5511285.80 rows=14 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.5 rows x 45 workers.  Max 4 rows (seg60) with 6569 ms to first row, 23151 ms to end, start offset by 342126 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_24 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5438084.26 rows=14 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.4 rows x 47 workers.  Max 4 rows (seg43) with 5263 ms to first row, 24597 ms to end, start offset by 344856 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_25 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5358692.20 rows=13 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.6 rows x 48 workers.  Max 4 rows (seg76) with 7180 ms to first row, 22165 ms to end, start offset by 376443 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_17 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5281412.68 rows=13 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.4 rows x 50 workers.  Max 3 rows (seg27) with 5277 ms to first row, 20656 ms to end, start offset by 193889 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_18 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5123930.16 rows=13 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.3 rows x 43 workers.  Max 3 rows (seg6) with 5798 ms to first row, 20120 ms to end, start offset by 219499 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_19 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5385189.08 rows=13 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.1 rows x 15 workers.  Max 2 rows (seg71) with 19773 ms to first row, 21842 ms to end, start offset by 234339 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_20 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..4986665.22 rows=14 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.2 rows x 23 workers.  Max 2 rows (seg20) with 15374 ms to first row, 20079 ms to end, start offset by 259665 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_21 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..4665402.82 rows=14 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.2 rows x 23 workers.  Max 2 rows (seg5) with 9586 ms to first row, 20313 ms to end, start offset by 278533 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_22 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5388767.72 rows=13 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.7 rows x 51 workers.  Max 4 rows (seg22) with 6543 ms to first row, 28620 ms to end, start offset by 299722 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_23 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5511285.80 rows=14 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.5 rows x 45 workers.  Max 4 rows (seg60) with 6569 ms to first row, 23151 ms to end, start offset by 342126 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_24 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5438084.26 rows=14 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.4 rows x 47 workers.  Max 4 rows (seg43) with 5263 ms to first row, 24597 ms to end, start offset by 344856 ms.
+                     ->  Append-only Scan on cdl_raw_1x_12101_hwv6_201605_1_prt_25 cdl_raw_1x_12101_hwv6_201605  (cost=0.00..5358692.20 rows=13 width=0)
+                           Filter: call_start_time >= '2016-05-01 00:00:00'::timestamp without time zone AND call_start_time < '2016-05-20 00:00:00'::timestamp without time zone AND cur_subscriber_number::text = '460036671149444'::text
+                           Rows out:  Avg 1.6 rows x 48 workers.  Max 4 rows (seg76) with 7180 ms to first row, 22165 ms to end, start offset by 376443 ms.
+ Slice statistics:
+   (slice0)    Executor memory: 3324K bytes.
+   (slice1)    Executor memory: 3040K bytes avg x 84 workers, 3040K bytes max (seg0).
+ Statement statistics:
+   Memory used: 128000K bytes
+ Total runtime: 662396.798 ms

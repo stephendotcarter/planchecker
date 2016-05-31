@@ -28,9 +28,9 @@ type Node struct {
 	// Variable parsed from EXPLAIN ANALYZE
 	ActualRows   float64
 	AvgRows      float64
-	Workers      float64
+	Workers      int64
 	MaxRows      float64
-	MaxSeg       float64
+	MaxSeg       string
 	Scans        int64
 	MsFirst      float64
 	MsEnd        float64
@@ -113,12 +113,6 @@ var (
 		"NODE":               regexp.MustCompile(`(.*) \(cost=(.*)\.\.(.*) rows=(.*) width=(.*)\)`),
 		"SLICE":              regexp.MustCompile(`(.*)  \(slice([0-9]*)`),
 		"SUBPLAN":            regexp.MustCompile(` SubPlan `),
-		
-		"ROWSTAT":            regexp.MustCompile(`Rows (out|in): `),
-		"ROWSTAT_ROWS":       regexp.MustCompile(`Rows (out|in):  ([0-9.-]{1,}) rows`),
-		"ROWSTAT_AVG":        regexp.MustCompile(`Avg ([0-9.-]{1,}) rows x ([0-9.-]{1,}) workers.*  Max ([0-9.-]{1,}) rows`),
-		"ROWSTAT_FIRST":      regexp.MustCompile(`with ([0-9.-]{1,}) ms to first`),
-		"ROWSTAT_END_START":  regexp.MustCompile(` ([0-9.-]{1,}) ms to end, start offset by (.*) ms.`),
 
 		"SLICESTATS":           regexp.MustCompile(` Slice statistics:`),
 		"SLICESTATS_1":         regexp.MustCompile(`\((slice[0-9]{1,})\).*Executor memory: ([0-9]{1,})K bytes`),
@@ -334,7 +328,7 @@ func parseNodeExtraInfo(n *Node) error {
 	n.AvgRows      = -1
 	n.Workers      = -1
 	n.MaxRows      = -1
-	n.MaxSeg       = -1
+	n.MaxSeg       = "-"
 	n.Scans        = -1
 	n.MsFirst      = -1
 	n.MsEnd        = -1
@@ -425,9 +419,9 @@ func parseNodeExtraInfo(n *Node) error {
 			re = regexp.MustCompile(` x (\d+) workers`)
 			m = re.FindStringSubmatch(line)
 			if len(m) == re.NumSubexp() + 1 {
-				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+				if s, err := strconv.ParseInt(m[1], 10, 64); err == nil {
 					n.Workers = s
-					log.Debugf("Workers %f\n", n.Workers)
+					log.Debugf("Workers %d\n", n.Workers)
 				}
 			}
 
@@ -437,6 +431,34 @@ func parseNodeExtraInfo(n *Node) error {
 				if s, err := strconv.ParseInt(m[1], 10, 64); err == nil {
 					n.Scans = s
 					log.Debugf("Scans %f\n", n.Scans)
+				}
+			}
+
+			re = regexp.MustCompile(` \((seg\d+)\) `)
+			m = re.FindStringSubmatch(line)
+			if len(m) == re.NumSubexp() + 1 {
+				n.MaxSeg = m[1]
+				log.Debugf("MaxSeg %s\n", n.MaxSeg)
+			}
+
+			re = regexp.MustCompile(`Max (\S+) rows \(`)
+			m = re.FindStringSubmatch(line)
+			if len(m) == re.NumSubexp() + 1 {
+				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+					n.MaxRows = s
+				}
+				log.Debugf("MaxRows %f\n", n.MaxRows)
+			
+			} else {
+				// Only execute this if "Max" was not found
+				re = regexp.MustCompile(` (\S+) rows \(`)
+				m = re.FindStringSubmatch(line)
+				if len(m) == re.NumSubexp() + 1 {
+					if s, err := strconv.ParseFloat(m[1], 64); err == nil {
+						n.ActualRows = s
+						log.Debugf("Scans %f\n", n.Scans)
+					}
+					log.Debugf("ActualRows %f\n", n.ActualRows)
 				}
 			}
 		}
@@ -488,6 +510,14 @@ func parseNodeExtraInfo(n *Node) error {
 		//     $exec_mem_line .= $info_line."\n";
 		// }
 
+	}
+
+	// From Greenplum code
+	//     Show elapsed time just once if they are the same or if we don't have
+	//     any valid elapsed time for first tuple.
+	// So set it here to avoid having to handle it later
+	if n.MsFirst == -1 {
+		n.MsFirst = n.MsEnd
 	}
 
 	return nil
@@ -835,97 +865,11 @@ func (p *Plan) Render(indent int) {
 	p.TopNode.Render(indent)
 }
 
-
-// Render node for output to HTML
-func (n *Node) RenderHtml(indent int) string {
-	HTML := ""
-	indent += 1
-	indentString := strings.Repeat(" ", indent * indentDepth)
-	
-	if n.Slice > -1 {
-		HTML += fmt.Sprintf("%s   <span class=\"label label-success\">Slice %d</span>\n",
-			indentString,
-			n.Slice)
-	}
-	HTML += fmt.Sprintf("%s<strong>-> %s | startup cost %s | total cost %s | rows %d | width %d</strong>\n",
-			indentString,
-			n.Operator,
-			n.StartupCost,
-			n.TotalCost,
-			n.Rows,
-			n.Width)
-
-	for _, e := range n.ExtraInfo[1:] {
-		HTML += fmt.Sprintf("%s   %s\n", indentString, strings.Trim(e, " "))
-	}
-
-	for _, w := range n.Warnings {
-		HTML += fmt.Sprintf("%s   <span class=\"label label-danger\">WARNING: %s | %s</span>\n", indentString, w.Cause, w.Resolution)
-	}
-	// Render sub nodes
-	for _, s := range n.SubNodes {
-		HTML += s.RenderHtml(indent)
-	}
-
-	for _, s := range n.SubPlans {
-		HTML += s.RenderHtml(indent)
-	}
-
-	return HTML
-}
-
-
-// Render plan for output to console
-func (p *Plan) RenderHtml(indent int) string {
-	HTML := ""
-	indent += 1
-	indentString := strings.Repeat(" ", indent * indentDepth)
-
-	HTML += fmt.Sprintf("%s<strong>%s</strong>", indentString, p.Name)
-	HTML += p.TopNode.RenderHtml(indent)
-	return HTML
-}
-
-
 // Render explain for output to console
 func (e *Explain) PrintPlan() {
 
 	fmt.Println("Plan:")
 	e.Plans[0].TopNode.Render(0)
-	
-	/*
-		if node.Slice > -1 {
-			fmt.Printf("%sSLICE: slice %d\n",
-				thisIndent,
-				node.Slice)
-		}
-
-		for _, n := range node.SubNodes {
-			fmt.Printf("%sSUBNODE: %s\n", thisIndent, n.Operator)
-		}
-
-		for _, p := range node.SubPlans {
-			fmt.Printf("%sSUBPLAN: %s\n", thisIndent, p.Name)
-		}
-	*/
-		/*
-		fmt.Printf("%sInOut %s | Rows %f | Avg %f | Max %f | Workers %d | First %f | End %f | Offset %f\n",
-			thisIndent,
-			node.RowStat.InOut,
-			node.RowStat.Rows,
-			node.RowStat.Avg,
-			node.RowStat.Max,
-			node.RowStat.Workers,
-			node.RowStat.First,
-			node.RowStat.End,
-			node.RowStat.Offset)
-		*/
-
-		/*
-		for _, line := range node.ExtraInfo {
-			fmt.Printf("%sRAWLINE: %s\n", thisIndent, strings.Trim(line, " "))
-		}
-		*/
 	
 	if len(e.Warnings) > 0 {
 		fmt.Printf("\n")
@@ -968,87 +912,6 @@ func (e *Explain) PrintPlan() {
 		fmt.Printf("\t%.0f ms\n", e.Runtime)
 	}
 
-}
-
-
-// Render explain for output to HTML
-func (e *Explain) PrintPlanHtml() string {
-	HTML := ""
-	HTML += fmt.Sprintf("<strong>Plan:</strong>\n")
-	HTML += e.Plans[0].TopNode.RenderHtml(0)
-	
-	/*
-		if node.Slice > -1 {
-			fmt.Printf("%sSLICE: slice %d\n",
-				thisIndent,
-				node.Slice)
-		}
-
-		for _, n := range node.SubNodes {
-			fmt.Printf("%sSUBNODE: %s\n", thisIndent, n.Operator)
-		}
-
-		for _, p := range node.SubPlans {
-			fmt.Printf("%sSUBPLAN: %s\n", thisIndent, p.Name)
-		}
-	*/
-		/*
-		fmt.Printf("%sInOut %s | Rows %f | Avg %f | Max %f | Workers %d | First %f | End %f | Offset %f\n",
-			thisIndent,
-			node.RowStat.InOut,
-			node.RowStat.Rows,
-			node.RowStat.Avg,
-			node.RowStat.Max,
-			node.RowStat.Workers,
-			node.RowStat.First,
-			node.RowStat.End,
-			node.RowStat.Offset)
-		*/
-
-		/*
-		for _, line := range node.ExtraInfo {
-			fmt.Printf("%sRAWLINE: %s\n", thisIndent, strings.Trim(line, " "))
-		}
-		*/
-
-	if len(e.Warnings) > 0 {
-		HTML += fmt.Sprintf("<strong>Warnings:</strong>\n")
-		for _, w := range e.Warnings {
-			HTML += fmt.Sprintf("\t<span class=\"label label-danger\">%s | %s</span>\n", w.Cause, w.Resolution)
-		}
-	}
-
-	if len(e.SliceStats) > 0 {
-		HTML += fmt.Sprintf("<strong>Slice statistics:</strong>\n")
-		for _, stat := range e.SliceStats {
-			HTML += fmt.Sprintf("\t%s\n", stat)
-		}
-	}
-
-	if e.MemoryUsed > 0 {
-		HTML += fmt.Sprintf("<strong>Statement statistics:</strong>\n")
-		HTML += fmt.Sprintf("\tMemory used: %d\n", e.MemoryUsed)
-		HTML += fmt.Sprintf("\tMemory wanted: %d\n", e.MemoryWanted)
-	}
-	
-	if len(e.Settings) > 0 {
-		HTML += fmt.Sprintf("<strong>Settings:</strong>\n")
-		for _, setting := range e.Settings {
-			HTML += fmt.Sprintf("\t%s = %s\n", setting.Name, setting.Value)
-		}
-	}
-
-	if e.Optimizer != "" {
-		HTML += fmt.Sprintf("<strong>Optimizer status:</strong>\n")
-		HTML += fmt.Sprintf("\t%s\n", e.Optimizer)
-	}
-	
-	if e.Runtime > 0 {
-		HTML += fmt.Sprintf("<strong>Total runtime:</strong>\n")
-		HTML += fmt.Sprintf("\t%.0f ms\n", e.Runtime)
-	}
-
-	return HTML
 }
 
 
