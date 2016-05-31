@@ -484,6 +484,14 @@ func parseNodeExtraInfo(n *Node) error {
 
 	}
 
+	// From Greenplum code
+	//     Show elapsed time just once if they are the same or if we don't have
+	//     any valid elapsed time for first tuple.
+	// So set it here to avoid having to handle it later
+	if n.MsFirst == -1 {
+		n.MsFirst = n.MsEnd
+	}
+
 	return nil
 }
 
