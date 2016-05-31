@@ -87,27 +87,30 @@ func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
 
 // Render node for output to HTML
 func RenderNodeHtml(n *plan.Node, indent int) string {
-    HTML := "<tr><td>"
     indent += 1
-    indentString := strings.Repeat(" ", indent * indentDepth)
+    //indentString := strings.Repeat(" ", indent * indentDepth)
+    indentPixels := indent * indentDepth * 10
+
+    HTML := fmt.Sprintf("<tr><td style=\"padding-left:%dpx\">", indentPixels)
     
     if n.Slice > -1 {
-        HTML += fmt.Sprintf("%s   <span class=\"label label-success\">Slice %d</span>\n",
-            indentString,
+        HTML += fmt.Sprintf("   <span class=\"label label-success\">Slice %d</span>\n",
             n.Slice)
     }
-    //HTML += fmt.Sprintf("%s<strong>-> %s | startup cost %s | total cost %s | rows %d | width %d</strong>\n",
-    HTML += fmt.Sprintf("%s<strong>-> %s</strong>\n",
-        indentString,
+    HTML += fmt.Sprintf("<strong>-> %s (cost=%s..%s rows=%d width=%d)</strong>\n",
+    //HTML += fmt.Sprintf("%s<strong>-> %s</strong>\n",
         n.Operator,
-    )
+        n.StartupCost,
+        n.TotalCost,
+        n.Rows,
+        n.Width)
 
     for _, e := range n.ExtraInfo[1:] {
-        HTML += fmt.Sprintf("%s   %s\n", indentString, strings.Trim(e, " "))
+        HTML += fmt.Sprintf("   %s\n", strings.Trim(e, " "))
     }
 
     for _, w := range n.Warnings {
-        HTML += fmt.Sprintf("%s   <span class=\"label label-danger\">WARNING: %s | %s</span>\n", indentString, w.Cause, w.Resolution)
+        HTML += fmt.Sprintf("   <span class=\"label label-danger\">WARNING: %s | %s</span>\n", w.Cause, w.Resolution)
     }
 
     HTML += "</td>"
@@ -115,30 +118,49 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
     HTML += fmt.Sprintf("<td class=\"text-right\">%s</td><td class=\"text-right\">%s</td><td class=\"text-right\">%d</td><td class=\"text-right\">%d</td>\n",
         n.StartupCost,
         n.TotalCost,
-        n.Rows,
-        n.Width)
+        n.Width,
+        n.Rows)
 
     if n.IsAnalyzed == true {
         if n.ActualRows > -1 {
-            HTML += fmt.Sprintf("<td class=\"text-right\">%.2f</td><td class=\"text-right\">%.2f</td><td class=\"text-right\">%.2f</td><td class=\"text-right\">%.2f</td><td class=\"text-right\">%s</td><td class=\"text-right\">%s</td><td class=\"text-right\">%s</td><td class=\"text-right\">%s</td>\n",
+            HTML += fmt.Sprintf("<td class=\"text-right\">%.2f</td>" +
+                    "<td class=\"text-right\">%.2f</td>" +
+                    "<td class=\"text-right\">%.2f</td>" +
+                    "<td class=\"text-right\">%.2f</td>" +
+                    "<td class=\"text-right\">%.2f</td>" +
+                    "<td class=\"text-right\">%s</td>" +
+                    "<td class=\"text-right\">%s</td>" +
+                    "<td class=\"text-right\">%s</td>" +
+                    "<td class=\"text-right\">%s</td>\n",
                 n.MsFirst,
                 n.MsEnd,
                 n.MsOffset,
+                n.ActualRows * float64(n.Width),
                 n.ActualRows,
                 "-",
                 "-",
                 "-",
-                "-")
+                n.MaxSeg)
         } else {
-            HTML += fmt.Sprintf("<td class=\"text-right\">%.2f</td><td class=\"text-right\">%.2f</td><td class=\"text-right\">%.2f</td><td class=\"text-right\">%s</td><td class=\"text-right\">%.2f</td><td class=\"text-right\">%d</td><td class=\"text-right\">%.2f</td><td class=\"text-right\">%.2f</td>\n",
+            HTML += fmt.Sprintf("<td class=\"text-right\">%.2f</td>" + 
+                    "<td class=\"text-right\">%.2f</td>" +
+                    "<td class=\"text-right\">%.2f</td>" +
+                    "<td class=\"text-right\">%.2f</td>" +
+                    "<td class=\"text-right\">%s</td>" +
+                    "<td class=\"text-right\">%.2f</td>" +
+                    "<td class=\"text-right\">%.2f</td>" +
+                    "<td class=\"text-right\">%s</td>\n" +
+                    "<td class=\"text-right\">%d</td>\n",
+                    
                 n.MsFirst,
                 n.MsEnd,
                 n.MsOffset,
+                n.AvgRows * float64(n.Width),
                 "-",
                 n.AvgRows,
-                n.Workers,
                 n.MaxRows,
-                n.MaxSeg)
+                n.MaxSeg,
+                n.Workers)
         }
     }
 
@@ -160,9 +182,10 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 func RenderPlanHtml(p *plan.Plan, indent int) string {
     HTML := ""
     indent += 1
-    indentString := strings.Repeat(" ", indent * indentDepth)
+    //indentString := strings.Repeat(" ", indent * indentDepth)
+    indentPixels := indent * indentDepth * 10
 
-    HTML += fmt.Sprintf("<tr><td>%s<strong>%s</strong></td></tr>", indentString, p.Name)
+    HTML += fmt.Sprintf("<tr><td style=\"padding-left:%dpx;\"><strong>%s</strong></td></tr>", indentPixels, p.Name)
     HTML += RenderNodeHtml(p.TopNode, indent)
     return HTML
 }
@@ -171,10 +194,22 @@ func RenderExplainHtml(e *plan.Explain) string {
     HTML := ""
     HTML += `<table class="table table-condensed table-striped table-bordered">`
     HTML += "<tr>"
-    HTML += "<th>Query Plan:</th><th class=\"text-right\">Startup Cost</th><th class=\"text-right\">Total Cost</th><th class=\"text-right\">~Rows</th><th class=\"text-right\">Width</th>"
+    HTML += "<th>Query Plan:</th>" +
+        "<th class=\"text-right\">Startup Cost</th>" +
+        "<th class=\"text-right\">Total Cost</th>" +
+        "<th class=\"text-right\">Width</th>" +
+        "<th class=\"text-right\">Estimated Rows</th>"
     if e.Plans[0].TopNode.IsAnalyzed == true {
-        HTML += "<th class=\"text-right\">First/ms</th><th class=\"text-right\">End/ms</th><th class=\"text-right\">Offset/ms</th>"
-        HTML += "<th class=\"text-right\">Actual Rows</th><th class=\"text-right\">Avg Rows</th><th class=\"text-right\">Workers</th><th class=\"text-right\">Max Rows</th><th class=\"text-right\">Max Seg</th>"
+        HTML += "<th class=\"text-right\">First ms</th>" +
+            "<th class=\"text-right\">End ms</th>" +
+            "<th class=\"text-right\">Offset ms</th>"
+        HTML += "<th class=\"text-right\">Bytes</th>" +
+            "<th class=\"text-right\">Actual Rows</th>" +
+            "<th class=\"text-right\">Avg Rows</th>" +
+            "<th class=\"text-right\">Max Rows</th>" +
+            "<th class=\"text-right\">Max Seg</th>" +
+            "<th class=\"text-right\">Workers</th>"
+            
     }
     HTML += "</tr>\n"
     HTML += RenderNodeHtml(e.Plans[0].TopNode, 0)
