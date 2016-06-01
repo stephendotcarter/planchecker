@@ -19,6 +19,8 @@ type Node struct {
 	
 	// Variables parsed from EXPLAIN
 	Operator     string
+	Object       string // Name of index or table. Only exists for some nodes
+	ObjectType   string // TABLE, INDEX, etc...
 	Slice        int64
 	StartupCost  string
 	TotalCost    string
@@ -149,18 +151,26 @@ func (n *Node) checkNodeEstimatedRows() {
 	re := regexp.MustCompile(`(Dynamic Table|Table|Parquet table|Bitmap Index|Bitmap Append-Only Row-Oriented|Seq) Scan`)
 	if re.MatchString(n.Operator) {
 		if n.Rows == 1 {
+			warningAction := ""
+			// Preformat the string here
+			if n.ObjectType == "TABLE" {
+				warningAction = fmt.Sprintf("ANALYZE on table")
+			} else if n.ObjectType == "INDEX" {
+				warningAction = fmt.Sprintf("REINDEX on index")
+			}
+
 			// If EXPLAIN ANALYZE output then have to check further
 			if n.IsAnalyzed == true {
 				if n.ActualRows > 1 || n.AvgRows > 1 {
 					n.Warnings = append(n.Warnings, Warning{
-						"Rows stats are higher than estimated",
-						"Table has NOT been ANALYZED"})
+						"Actual rows is higher than estimated rows",
+						fmt.Sprintf("Need to run %s \"%s\"", warningAction, n.Object)})
 				}
 			// Else just flag as a potential not analyzed table
 			} else {
 				n.Warnings = append(n.Warnings, Warning{
 					"Estimated rows is 1",
-					"Check if table has been ANALYZED"})
+					fmt.Sprintf("May need to run %s \"%s\"", warningAction, n.Object)})
 			}
 		}
 	}
@@ -320,6 +330,9 @@ func parseNodeExtraInfo(n *Node) error {
 
 	groups := patterns["NODE"].FindStringSubmatch(line)
 
+	n.Object = ""
+	n.ObjectType = ""
+
 	if len(groups) == 6 {
 		// Remove the indent arrow
 		groups[1] = strings.Trim(groups[1], " ->")
@@ -333,6 +346,23 @@ func parseNodeExtraInfo(n *Node) error {
 		} else {
 			n.Operator = strings.TrimSpace(groups[1])
 			n.Slice = -1
+		}
+
+		// Try to get object name if this is a scan node
+		// Look for non index scans
+		re := regexp.MustCompile(`(Index ){0,0} Scan (on|using) (\S+)`)
+		temp := re.FindStringSubmatch(n.Operator)
+		if len(temp) == re.NumSubexp() + 1 {
+			n.Object = temp[3]
+			n.ObjectType = "TABLE"
+		}
+
+		// Look for index scans
+		re = regexp.MustCompile(`Index.*Scan (on|using) (\S+)`)
+		temp = re.FindStringSubmatch(n.Operator)
+		if len(temp) == re.NumSubexp() + 1 {
+			n.Object = temp[2]
+			n.ObjectType = "INDEX"
 		}
 
 		// Store the remaining params
