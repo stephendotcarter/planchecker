@@ -200,11 +200,14 @@ func (n *Node) checkNodeScans() {
 
 // Check for partition scan
 func (n *Node) checkNodePartitionScans() {
+	partitionThreshold := int64(100)
+	partitionPrctThreshold := int64(25)
+
 	// Planner
 	re := regexp.MustCompile(`Append`)
 	if re.MatchString(n.Operator) {
 		// Warn if the Append node has more than 100 subnodes
-		if len(n.SubNodes) > 100  {
+		if int64(len(n.SubNodes)) >= partitionThreshold  {
 			n.Warnings = append(n.Warnings, Warning{
 				fmt.Sprintf("Detected %d partition scans", len(n.SubNodes)),
 				"Check if partitions can be eliminated"})
@@ -217,7 +220,7 @@ func (n *Node) checkNodePartitionScans() {
 		fmt.Println((n.PartSelected * 100 / n.PartTotal))
 
 		// Warn if selected partitions is great than 100
-		if n.PartSelected > 100  {
+		if n.PartSelected >= partitionThreshold  {
 			n.Warnings = append(n.Warnings, Warning{
 				fmt.Sprintf("Detected %d partition scans", n.PartSelected),
 				"Check if partitions can be eliminated"})
@@ -230,7 +233,7 @@ func (n *Node) checkNodePartitionScans() {
 				"Review query"})
 		// Also warn if greater than 25% of total partitions were selected.
 		// I just chose 25% for now... may need to be adjusted to a more reasonable value
-		} else if (n.PartSelected * 100 / n.PartTotal) > 25 {
+		} else if (n.PartSelected * 100 / n.PartTotal) >= partitionPrctThreshold {
 			n.Warnings = append(n.Warnings, Warning{
 				fmt.Sprintf("%d%% (%d out of %d) partitions selected", (n.PartSelected * 100 / n.PartTotal), n.PartSelected, n.PartTotal),
 				"Check if partitions can be eliminated"})
