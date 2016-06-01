@@ -115,7 +115,15 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 
     HTML += "</td>"
 
-    HTML += fmt.Sprintf("<td class=\"text-right\">%s</td><td class=\"text-right\">%s</td><td class=\"text-right\">%d</td><td class=\"text-right\">%d</td>\n",
+    HTML += fmt.Sprintf(
+            "<td class=\"text-right\">%s</td>" +
+            "<td class=\"text-right\">%s</td>" +
+            "<td class=\"text-right\">%s</td>" +
+            "<td class=\"text-right\">%s</td>" +
+            "<td class=\"text-right\">%d</td>" +
+            "<td class=\"text-right\">%d</td>\n",
+        n.Object,
+        n.ObjectType,
         n.StartupCost,
         n.TotalCost,
         n.Width,
@@ -123,7 +131,8 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 
     if n.IsAnalyzed == true {
         if n.ActualRows > -1 {
-            HTML += fmt.Sprintf("<td class=\"text-right\">%.2f</td>" +
+            HTML += fmt.Sprintf(
+                    "<td class=\"text-right\">%.2f</td>" +
                     "<td class=\"text-right\">%.2f</td>" +
                     "<td class=\"text-right\">%.2f</td>" +
                     "<td class=\"text-right\">%.2f</td>" +
@@ -142,7 +151,8 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
                 "-",
                 n.MaxSeg)
         } else {
-            HTML += fmt.Sprintf("<td class=\"text-right\">%.2f</td>" + 
+            HTML += fmt.Sprintf(
+                    "<td class=\"text-right\">%.2f</td>" + 
                     "<td class=\"text-right\">%.2f</td>" +
                     "<td class=\"text-right\">%.2f</td>" +
                     "<td class=\"text-right\">%.2f</td>" +
@@ -151,7 +161,6 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
                     "<td class=\"text-right\">%.2f</td>" +
                     "<td class=\"text-right\">%s</td>\n" +
                     "<td class=\"text-right\">%d</td>\n",
-                    
                 n.MsFirst,
                 n.MsEnd,
                 n.MsOffset,
@@ -195,6 +204,8 @@ func RenderExplainHtml(e *plan.Explain) string {
     HTML += `<table class="table table-condensed table-striped table-bordered">`
     HTML += "<tr>"
     HTML += "<th>Query Plan:</th>" +
+        "<th class=\"text-right\">Object</th>" +
+        "<th class=\"text-right\">Type</th>" +
         "<th class=\"text-right\">Startup Cost</th>" +
         "<th class=\"text-right\">Total Cost</th>" +
         "<th class=\"text-right\">Width</th>" +
