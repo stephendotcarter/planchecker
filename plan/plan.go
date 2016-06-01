@@ -283,6 +283,25 @@ func (e *Explain) checkExplainSliceCount() {
 }
 
 
+// Check if optimizer=on but status = legacy
+func (e *Explain) checkExplainPlannerFallback() {
+	// Settings:  optimizer=on
+	// Optimizer status: legacy query optimizer
+	re := regexp.MustCompile(`legacy query optimizer`)
+
+	if re.MatchString(e.Optimizer) {
+		for _, s := range e.Settings {
+			if s.Name == "optimizer" && s.Value == "on" {
+				e.Warnings = append(e.Warnings, Warning{
+					"PQO enabled but plan was produced by legacy query optimizer",
+					"No Action Required"})
+				break
+			}
+		}
+	}
+}
+
+
 // Example data to be parsed
 //   ->  Hash Join  (cost=0.00..862.00 rows=1 width=16)
 //         Hash Cond: public.sales.id = public.sales.year
@@ -965,6 +984,7 @@ func (e *Explain) InitPlan(plantext string) error {
 	// Run Explain checks
 	e.checkExplainMotionCount()
 	e.checkExplainSliceCount()
+	e.checkExplainPlannerFallback()
 
 	return nil
 }
