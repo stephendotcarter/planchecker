@@ -259,7 +259,7 @@ func (e *Explain) checkExplainMotionCount() {
 		}
 	}
 
-	if motionCount > motionCountLimit {
+	if motionCount >= motionCountLimit {
 		e.Warnings = append(e.Warnings, Warning{
 			fmt.Sprintf("Found %d Redistribute/Broadcast motions", motionCount),
 			"Review query"})
