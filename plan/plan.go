@@ -809,17 +809,23 @@ func (e *Explain) parseline(line string) {
 
 // Populate SubNodes/SubPlans arrays for each node, which results
 // in a tree structre with Plans[0] being the top most object:
-// Plans[0]:
-//   topnode:
-//     subnodes:
-//       node:
-//         subnodes:
-//           node:
-//         subplans:
-//     subplans:
-//       plan:
-//         topnode:
-//           etc...
+// Plan 0
+//     TopNode
+//         SubNodes[]
+//             Node 0
+//                 SubNodes[]
+//                 SubPlans[]
+//             Node 1
+//                 SubNodes[]
+//                 SubPlans[]
+//         SubPlans[]
+//             Plan 0
+//                 TopNode
+//                     SubNodes[]
+//                         Node 0
+//                             SubNodes[]
+//                             SubPlans[]
+//                     SubPlans[]
 //
 func (e *Explain) BuildTree() {
 	log.Debugf("########## START BUILD TREE ##########\n")
