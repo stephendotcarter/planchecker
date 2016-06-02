@@ -227,8 +227,6 @@ func (n *Node) checkNodePartitionScans() {
 	// PQO
 	re = regexp.MustCompile(`Partition Selector`)
 	if re.MatchString(n.Operator) {
-		fmt.Println((n.PartSelected * 100 / n.PartTotal))
-
 		// Warn if selected partitions is great than 100
 		if n.PartSelected >= partitionThreshold  {
 			n.Warnings = append(n.Warnings, Warning{
