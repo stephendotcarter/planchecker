@@ -27,7 +27,7 @@ type Node struct {
 	Rows         int64
 	Width        int64
 	
-	// Variable parsed from EXPLAIN ANALYZE
+	// Variables parsed from EXPLAIN ANALYZE
 	ActualRows   float64
 	AvgRows      float64
 	Workers      int64
