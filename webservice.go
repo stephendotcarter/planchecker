@@ -145,11 +145,12 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
                 n.MsEnd,
                 n.MsOffset,
                 n.ActualRows * float64(n.Width),
+
                 n.ActualRows,
                 "-",
                 "-",
-                "-",
-                n.MaxSeg)
+                n.MaxSeg,
+                "-")
         } else {
             HTML += fmt.Sprintf(
                     "<td class=\"text-right\">%.2f</td>" + 
@@ -165,6 +166,7 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
                 n.MsEnd,
                 n.MsOffset,
                 n.AvgRows * float64(n.Width),
+
                 "-",
                 n.AvgRows,
                 n.MaxRows,
