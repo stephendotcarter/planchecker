@@ -250,6 +250,35 @@ func (n *Node) checkNodePartitionScans() {
 }
 
 
+// Check for data skew
+func (n *Node) checkNodeDataSkew() {
+	threshold := 10000.0
+
+	// Only proceed if over threshold
+	if n.ActualRows >= threshold || n.AvgRows >= threshold {
+		// Handle AvgRows
+		if n.AvgRows > 0 {
+			// A segment has more than 50% of all rows
+			// Only do this if workers > 2 otherwise this situation will report skew:
+			//     Rows out:  Avg 500000.0 rows x 2 workers.  Max 500001 rows (seg0)
+			// but seg0 only has 1 extra row
+			if ( n.MaxRows > (n.AvgRows * float64(n.Workers) / 2.0) ) && n.Workers > 2 {
+				n.Warnings = append(n.Warnings, Warning{
+					fmt.Sprintf("Data skew on segment %s", n.MaxSeg),
+					"Review query"})
+			}
+		// Handle ActualRows
+		// If ActualRows is set and MaxSeg is set then this
+		// segment has the highest rows
+		} else if n.ActualRows > 0 && n.MaxSeg != "-" {
+			n.Warnings = append(n.Warnings, Warning{
+				fmt.Sprintf("Data skew on segment %s", n.MaxSeg),
+				"Review query"})
+		}
+	}
+}
+
+
 // ------------------------------------------------------------
 // Checks relating to the over all Explain output
 // ------------------------------------------------------------
@@ -1010,6 +1039,7 @@ func (e *Explain) InitPlan(plantext string) error {
 		n.checkNodeSpilling()
 		n.checkNodeScans()
 		n.checkNodePartitionScans()
+		n.checkNodeDataSkew()
 	}
 
 	// Run Explain checks
