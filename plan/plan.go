@@ -45,6 +45,7 @@ type Node struct {
 	SpillReuse   int64
 	PartSelected int64
 	PartTotal    int64
+	Filter       string
 
 	// Contains all the text lines below each node
 	ExtraInfo []string
@@ -572,6 +573,14 @@ func parseNodeExtraInfo(n *Node) error {
 			n.PartTotal, _ = strconv.ParseInt(strings.TrimSpace(m[2]), 10, 64)
 			log.Debugf("PartTotal %d\n", n.PartTotal)
 			log.Debugf("PartSelected %d\n", n.PartSelected)
+		}
+
+		// FILTER
+		re = regexp.MustCompile(`Filter: (\S+)`)
+		m = re.FindStringSubmatch(line)
+		if len(m) == re.NumSubexp()+1 {
+			n.Filter = m[1]
+			log.Debugf("Filter %s\n", n.Filter)
 		}
 
 		// #Executor memory:  4978K bytes avg, 39416K bytes max (seg2).
