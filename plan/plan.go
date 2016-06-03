@@ -37,6 +37,7 @@ type Node struct {
 	MsFirst      float64
 	MsEnd        float64
 	MsOffset     float64
+	MsNode       float64
 	AvgMem       float64
 	MaxMem       float64
 	ExecMemLine  float64
@@ -878,6 +879,22 @@ func (e *Explain) BuildTree() {
 	log.Debugf("########## END BUILD TREE ##########\n")
 }
 
+
+func (n *Node) CalculateSubNodeDiff() {
+	msChild := 0.0
+	for _, s := range n.SubNodes {
+		//log.Debugf("\tSUBNODE%s", s.Operator)
+		msChild += s.MsEnd
+	}
+
+	for _, s := range n.SubPlans {
+		//log.Debugf("\tSUBPLANNODE%s", s.TopNode.Operator)
+		msChild += s.TopNode.MsEnd
+	}
+
+	n.MsNode = n.MsEnd - msChild
+}
+
 // Render node for output to console
 func (n *Node) Render(indent int) {
 	indent += 1
@@ -1007,20 +1024,22 @@ func (e *Explain) InitPlan(plantext string) error {
 	// Convert array of nodes to tree structure
 	e.BuildTree()
 
-	for _, n := range e.Nodes {
+	for i := len(e.Nodes) - 1; i > -1; i-- {
 		// Parse ExtraInfo
-		err := parseNodeExtraInfo(n)
+		err := parseNodeExtraInfo(e.Nodes[i])
 		if err != nil {
 			return err
 		}
 
+		e.Nodes[i].CalculateSubNodeDiff()
+
 		// Run Node checks
-		n.checkNodeEstimatedRows()
-		n.checkNodeNestedLoop()
-		n.checkNodeSpilling()
-		n.checkNodeScans()
-		n.checkNodePartitionScans()
-		n.checkNodeDataSkew()
+		e.Nodes[i].checkNodeEstimatedRows()
+		e.Nodes[i].checkNodeNestedLoop()
+		e.Nodes[i].checkNodeSpilling()
+		e.Nodes[i].checkNodeScans()
+		e.Nodes[i].checkNodePartitionScans()
+		e.Nodes[i].checkNodeDataSkew()
 	}
 
 	// Run Explain checks
