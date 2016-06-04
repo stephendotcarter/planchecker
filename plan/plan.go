@@ -518,7 +518,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp()+1 {
 				if s, err := strconv.ParseInt(m[1], 10, 64); err == nil {
 					n.Scans = s
-					log.Debugf("Scans %f\n", n.Scans)
+					log.Debugf("Scans %d\n", n.Scans)
 				}
 			}
 
@@ -544,7 +544,6 @@ func parseNodeExtraInfo(n *Node) error {
 				if len(m) == re.NumSubexp()+1 {
 					if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 						n.ActualRows = s
-						log.Debugf("Scans %f\n", n.Scans)
 					}
 					log.Debugf("ActualRows %f\n", n.ActualRows)
 				}
