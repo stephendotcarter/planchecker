@@ -778,6 +778,10 @@ func (e *Explain) parseline(line string) error {
 		// Parse a new node
 		newNode := e.createNode(line)
 
+		if len(e.Nodes) == 0 && newNode.Indent != 1 {
+			return errors.New(fmt.Sprintf("Wrong indentation on first plan node... expected 1, found %d:\n%s\nRecommend running EXPLAIN again and resubmitting the plan.\nDo not manually adjust the indentation as this will lead to incorrect parsing!\n", newNode.Indent, strings.TrimRight(line, " ")))
+		}
+
 		// If this is the first node then insert the TopPlan also
 		if len(e.Nodes) == 0 {
 			newPlan := e.createPlan("Plan")
