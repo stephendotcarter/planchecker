@@ -25,6 +25,7 @@ type Node struct {
 	StartupCost float64
 	TotalCost   float64
 	NodeCost    float64
+	PrctCost    float64
 	Rows        int64
 	Width       int64
 
@@ -39,6 +40,7 @@ type Node struct {
 	MsEnd        float64
 	MsOffset     float64
 	MsNode       float64
+	MsPrct       float64
 	AvgMem       float64
 	MaxMem       float64
 	ExecMemLine  float64
@@ -904,7 +906,6 @@ func (e *Explain) BuildTree() {
 	log.Debugf("########## END BUILD TREE ##########\n")
 }
 
-
 func (n *Node) CalculateSubNodeDiff() {
 	msChild := 0.0
 	costChild := 0.0
@@ -921,6 +922,11 @@ func (n *Node) CalculateSubNodeDiff() {
 
 	n.MsNode = n.MsEnd - msChild
 	n.NodeCost = n.TotalCost - costChild
+}
+
+func (n *Node) CalculatePercentage(totalCost float64, totalMs float64) {
+	n.PrctCost = n.NodeCost / totalCost * 100
+	n.MsPrct = n.MsNode / totalMs * 100
 }
 
 // Render node for output to console
@@ -1052,23 +1058,28 @@ func (e *Explain) InitPlan(plantext string) error {
 	// Convert array of nodes to tree structure
 	e.BuildTree()
 
-	for i := len(e.Nodes) - 1; i > -1; i-- {
+	// Parse all nodes first so they are fully populated
+	for _, n := range e.Nodes {
 		// Parse ExtraInfo
-		err := parseNodeExtraInfo(e.Nodes[i])
+		err := parseNodeExtraInfo(n)
 		if err != nil {
 			return err
 		}
+	}
 
-		e.Nodes[i].CalculateSubNodeDiff()
+	// Loop again to perform checks
+	for _, n := range e.Nodes {
+		n.CalculateSubNodeDiff()
+		n.CalculatePercentage(e.Nodes[0].TotalCost, e.Nodes[0].MsEnd)
 
 		// Run Node checks
-		e.Nodes[i].checkNodeEstimatedRows()
-		e.Nodes[i].checkNodeNestedLoop()
-		e.Nodes[i].checkNodeSpilling()
-		e.Nodes[i].checkNodeScans()
-		e.Nodes[i].checkNodePartitionScans()
-		e.Nodes[i].checkNodeDataSkew()
-		e.Nodes[i].checkNodeFilterWithFunction()
+		n.checkNodeEstimatedRows()
+		n.checkNodeNestedLoop()
+		n.checkNodeSpilling()
+		n.checkNodeScans()
+		n.checkNodePartitionScans()
+		n.checkNodeDataSkew()
+		n.checkNodeFilterWithFunction()
 	}
 
 	// Run Explain checks
