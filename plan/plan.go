@@ -1078,6 +1078,8 @@ func (e *Explain) InitPlan(plantext string) error {
 	// Loop again to perform checks
 	for _, n := range e.Nodes {
 		n.CalculateSubNodeDiff()
+
+		// Pass in Cost + Time of top node as it should be equal to total
 		n.CalculatePercentage(e.Nodes[0].TotalCost, e.Nodes[0].MsEnd)
 
 		// Run Node checks
