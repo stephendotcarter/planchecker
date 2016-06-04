@@ -22,8 +22,8 @@ type Node struct {
 	Object      string // Name of index or table. Only exists for some nodes
 	ObjectType  string // TABLE, INDEX, etc...
 	Slice       int64
-	StartupCost string
-	TotalCost   string
+	StartupCost float64
+	TotalCost   float64
 	Rows        int64
 	Width       int64
 
@@ -398,8 +398,8 @@ func parseNodeExtraInfo(n *Node) error {
 		}
 
 		// Store the remaining params
-		n.StartupCost = strings.TrimSpace(groups[2])
-		n.TotalCost = strings.TrimSpace(groups[3])
+		n.StartupCost, _ = strconv.ParseFloat(strings.TrimSpace(groups[2]), 64)
+		n.TotalCost, _ = strconv.ParseFloat(strings.TrimSpace(groups[3]), 64)
 		n.Rows, _ = strconv.ParseInt(strings.TrimSpace(groups[4]), 10, 64)
 		n.Width, _ = strconv.ParseInt(strings.TrimSpace(groups[5]), 10, 64)
 

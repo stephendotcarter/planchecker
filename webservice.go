@@ -97,7 +97,7 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 		HTML += fmt.Sprintf("   <span class=\"label label-success\">Slice %d</span>\n",
 			n.Slice)
 	}
-	HTML += fmt.Sprintf("<strong>-> %s (cost=%s..%s rows=%d width=%d)</strong>\n",
+	HTML += fmt.Sprintf("<strong>-> %s (cost=%.2f..%.2f rows=%d width=%d)</strong>\n",
 		//HTML += fmt.Sprintf("%s<strong>-> %s</strong>\n",
 		n.Operator,
 		n.StartupCost,
@@ -118,8 +118,8 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 	HTML += fmt.Sprintf(
 		"<td class=\"text-right\">%s</td>"+
 			"<td class=\"text-right\">%s</td>"+
-			"<td class=\"text-right\">%s</td>"+
-			"<td class=\"text-right\">%s</td>"+
+			"<td class=\"text-right\">%.2f</td>"+
+			"<td class=\"text-right\">%.2f</td>"+
 			"<td class=\"text-right\">%d</td>"+
 			"<td class=\"text-right\">%d</td>\n",
 		n.Object,
