@@ -118,11 +118,10 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 	HTML += fmt.Sprintf(
 		"<td class=\"text-right\">%s</td>"+
 			"<td class=\"text-right\">%s</td>"+
-			"<td class=\"text-right\">%.2f</td>"+
-			"<td class=\"text-right\">%.2f</td>"+
+			"<td class=\"text-right\">%.0f</td>"+
+			"<td class=\"text-right\">%.0f</td>"+
 			"<td class=\"text-right\">%.0f%%</td>"+
-			"<td class=\"text-right\">%.2f</td>"+
-			"<td class=\"text-right\">%d</td>"+
+			"<td class=\"text-right\">%.0f</td>"+
 			"<td class=\"text-right\">%d</td>\n",
 		n.Object,
 		n.ObjectType,
@@ -130,58 +129,54 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 		n.NodeCost,
 		n.PrctCost,
 		n.TotalCost,
-		n.Width,
 		n.Rows)
 
 	if n.IsAnalyzed == true {
 		if n.ActualRows > -1 {
 			HTML += fmt.Sprintf(
-					//"<td class=\"text-right\">%.2f</td>"+
-					"<td class=\"text-right\">%.2f</td>"+
-					"<td class=\"text-right\">%.2f</td>"+
-					"<td class=\"text-right\">%.0f%%</td>"+
-					"<td class=\"text-right\">%.2f</td>"+
-					"<td class=\"text-right\">%.2f</td>"+
-					"<td class=\"text-right\">%.2f</td>"+
+					"<td class=\"text-right\">%.0f</td>"+
 					"<td class=\"text-right\">%s</td>"+
 					"<td class=\"text-right\">%s</td>"+
 					"<td class=\"text-right\">%s</td>"+
 					"<td class=\"text-right\">%s</td>\n",
-				//n.ActualRows*float64(n.Width),
-				n.MsFirst,
-				n.MsNode,
-				n.MsPrct,
-				n.MsEnd,
-				n.MsOffset,
 				n.ActualRows,
 				"-",
 				"-",
 				n.MaxSeg,
 				"-")
-		} else {
 			HTML += fmt.Sprintf(
-					//"<td class=\"text-right\">%.2f</td>"+
-					"<td class=\"text-right\">%.2f</td>"+
-					"<td class=\"text-right\">%.2f</td>"+
+					"<td class=\"text-right\">%.0f</td>"+
+					"<td class=\"text-right\">%.0f</td>"+
 					"<td class=\"text-right\">%.0f%%</td>"+
-					"<td class=\"text-right\">%.2f</td>"+
-					"<td class=\"text-right\">%.2f</td>"+
-					"<td class=\"text-right\">%s</td>"+
-					"<td class=\"text-right\">%.2f</td>"+
-					"<td class=\"text-right\">%.2f</td>"+
-					"<td class=\"text-right\">%s</td>\n"+
-					"<td class=\"text-right\">%d</td>\n",
-				//n.AvgRows*float64(n.Width),
+					"<td class=\"text-right\">%.0f</td>"+
+					"<td class=\"text-right\">%.0f</td>",
 				n.MsFirst,
 				n.MsNode,
 				n.MsPrct,
 				n.MsEnd,
-				n.MsOffset,
+				n.MsOffset)
+		} else {
+			HTML += fmt.Sprintf("<td class=\"text-right\">%s</td>"+
+					"<td class=\"text-right\">%.0f</td>"+
+					"<td class=\"text-right\">%.0f</td>"+
+					"<td class=\"text-right\">%s</td>\n"+
+					"<td class=\"text-right\">%d</td>\n",
 				"-",
 				n.AvgRows,
 				n.MaxRows,
 				n.MaxSeg,
 				n.Workers)
+			HTML += fmt.Sprintf(
+					"<td class=\"text-right\">%.0f</td>"+
+					"<td class=\"text-right\">%.0f</td>"+
+					"<td class=\"text-right\">%.0f%%</td>"+
+					"<td class=\"text-right\">%.0f</td>"+
+					"<td class=\"text-right\">%.0f</td>",
+				n.MsFirst,
+				n.MsNode,
+				n.MsPrct,
+				n.MsEnd,
+				n.MsOffset)
 		}
 	}
 
@@ -219,7 +214,7 @@ func RenderExplainHtml(e *plan.Explain) string {
 	HTMLTH1 = "<th></th>" +
 	"<th colspan=\"2\" class=\"text-center\">Object</th>" +
 	"<th colspan=\"4\" class=\"text-center\">Cost</th>" +
-	"<th colspan=\"2\" class=\"text-center\">Estimated</th>"
+	"<th colspan=\"1\" class=\"text-center\">Estimated</th>"
 	HTMLTH2 := "<tr>"
 	HTMLTH2 += "<th>Query Plan:</th>" +
 		"<th class=\"text-right\">Name</th>" +
@@ -228,21 +223,20 @@ func RenderExplainHtml(e *plan.Explain) string {
 		"<th class=\"text-right\">Node</th>" +
 		"<th class=\"text-right\">Prct</th>" +
 		"<th class=\"text-right\">Total</th>" +
-		"<th class=\"text-right\">Width</th>" +
 		"<th class=\"text-right\">Rows</th>"
 	if e.Plans[0].TopNode.IsAnalyzed == true {
-		HTMLTH1 += "<th colspan=\"5\" class=\"text-center\">Time Ms</th>"
-		HTMLTH2 += "<th class=\"text-right\">First</th>" +
-			"<th class=\"text-right\">Node</th>" +
-			"<th class=\"text-right\">Prct</th>" +
-			"<th class=\"text-right\">End</th>" +
-			"<th class=\"text-right\">Offset</th>"
 		HTMLTH1 += "<th colspan=\"6\" class=\"text-center\">Row Stats</th>"
 		HTMLTH2 += "<th class=\"text-right\">Actual</th>" +
 			"<th class=\"text-right\">Avg</th>" +
 			"<th class=\"text-right\">Max</th>" +
 			"<th class=\"text-right\">Seg</th>" +
 			"<th class=\"text-right\">Workers</th>"
+		HTMLTH1 += "<th colspan=\"5\" class=\"text-center\">Time Ms</th>"
+		HTMLTH2 += "<th class=\"text-right\">First</th>" +
+			"<th class=\"text-right\">Node</th>" +
+			"<th class=\"text-right\">Prct</th>" +
+			"<th class=\"text-right\">End</th>" +
+			"<th class=\"text-right\">Offset</th>"
 	}
 
 	HTMLTH1 += "</tr>\n"
