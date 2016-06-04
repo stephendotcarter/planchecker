@@ -70,7 +70,7 @@ func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
 	// Init the explain from string
 	err = explain.InitFromString(planText, true)
 	if err != nil {
-		fmt.Fprintf(w, "%s\n", err)
+		fmt.Fprintf(w, "Oops... we had a problem parsing the plan:\n--\n%s\n", err)
 		return
 	}
 
