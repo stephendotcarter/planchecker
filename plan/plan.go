@@ -922,6 +922,14 @@ func (n *Node) CalculateSubNodeDiff() {
 
 	n.MsNode = n.MsEnd - msChild
 	n.NodeCost = n.TotalCost - costChild
+	
+	if n.MsNode < 0 {
+		n.MsNode = 0
+	}
+
+	if n.NodeCost < 0 {
+		n.NodeCost = 0
+	}
 }
 
 func (n *Node) CalculatePercentage(totalCost float64, totalMs float64) {
