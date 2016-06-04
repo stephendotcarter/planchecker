@@ -809,9 +809,11 @@ func (e *Explain) parseline(line string) error {
 		e.parseRuntime(line)
 
 	} else if indent > 1 && e.planFinished == false {
-		// Append this line to ExtraInfo on the last node
-		e.Nodes[len(e.Nodes)-1].ExtraInfo = append(e.Nodes[len(e.Nodes)-1].ExtraInfo, line)
-
+		// Only add if node exists
+		if len(e.Nodes) > 0 {
+			// Append this line to ExtraInfo on the last node
+			e.Nodes[len(e.Nodes)-1].ExtraInfo = append(e.Nodes[len(e.Nodes)-1].ExtraInfo, line)
+		}
 	} else {
 		log.Debugf("SKIPPING\n")
 
