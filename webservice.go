@@ -132,7 +132,8 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 	if n.IsAnalyzed == true {
 		if n.ActualRows > -1 {
 			HTML += fmt.Sprintf(
-				"<td class=\"text-right\">%.2f</td>"+
+					//"<td class=\"text-right\">%.2f</td>"+
+					"<td class=\"text-right\">%.2f</td>"+
 					"<td class=\"text-right\">%.2f</td>"+
 					"<td class=\"text-right\">%.2f</td>"+
 					"<td class=\"text-right\">%.2f</td>"+
@@ -141,11 +142,11 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 					"<td class=\"text-right\">%s</td>"+
 					"<td class=\"text-right\">%s</td>"+
 					"<td class=\"text-right\">%s</td>\n",
+				//n.ActualRows*float64(n.Width),
 				n.MsFirst,
+				n.MsNode,
 				n.MsEnd,
 				n.MsOffset,
-				n.ActualRows*float64(n.Width),
-
 				n.ActualRows,
 				"-",
 				"-",
@@ -153,7 +154,8 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 				"-")
 		} else {
 			HTML += fmt.Sprintf(
-				"<td class=\"text-right\">%.2f</td>"+
+					//"<td class=\"text-right\">%.2f</td>"+
+					"<td class=\"text-right\">%.2f</td>"+
 					"<td class=\"text-right\">%.2f</td>"+
 					"<td class=\"text-right\">%.2f</td>"+
 					"<td class=\"text-right\">%.2f</td>"+
@@ -162,11 +164,11 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 					"<td class=\"text-right\">%.2f</td>"+
 					"<td class=\"text-right\">%s</td>\n"+
 					"<td class=\"text-right\">%d</td>\n",
+				//n.AvgRows*float64(n.Width),
 				n.MsFirst,
+				n.MsNode,
 				n.MsEnd,
 				n.MsOffset,
-				n.AvgRows*float64(n.Width),
-
 				"-",
 				n.AvgRows,
 				n.MaxRows,
@@ -205,26 +207,39 @@ func RenderExplainHtml(e *plan.Explain) string {
 	HTML := ""
 	HTML += `<table class="table table-condensed table-striped table-bordered">`
 	HTML += "<tr>"
-	HTML += "<th>Query Plan:</th>" +
-		"<th class=\"text-right\">Object</th>" +
+	HTMLTH1 := "<tr>"
+	HTMLTH1 = "<th></th>" +
+	"<th colspan=\"2\" class=\"text-center\">Object</th>" +
+	"<th colspan=\"2\" class=\"text-center\">Cost</th>" +
+	"<th colspan=\"2\" class=\"text-center\">Estimated</th>"
+	HTMLTH2 := "<tr>"
+	HTMLTH2 += "<th>Query Plan:</th>" +
+		"<th class=\"text-right\">Name</th>" +
 		"<th class=\"text-right\">Type</th>" +
-		"<th class=\"text-right\">Startup Cost</th>" +
-		"<th class=\"text-right\">Total Cost</th>" +
+		"<th class=\"text-right\">Startup</th>" +
+		"<th class=\"text-right\">Total</th>" +
 		"<th class=\"text-right\">Width</th>" +
-		"<th class=\"text-right\">Estimated Rows</th>"
+		"<th class=\"text-right\">Rows</th>"
 	if e.Plans[0].TopNode.IsAnalyzed == true {
-		HTML += "<th class=\"text-right\">First ms</th>" +
-			"<th class=\"text-right\">End ms</th>" +
-			"<th class=\"text-right\">Offset ms</th>"
-		HTML += "<th class=\"text-right\">Bytes</th>" +
-			"<th class=\"text-right\">Actual Rows</th>" +
-			"<th class=\"text-right\">Avg Rows</th>" +
-			"<th class=\"text-right\">Max Rows</th>" +
-			"<th class=\"text-right\">Max Seg</th>" +
+		HTMLTH1 += "<th colspan=\"4\" class=\"text-center\">Time Ms</th>"
+		HTMLTH2 += "<th class=\"text-right\">First</th>" +
+			"<th class=\"text-right\">Node</th>" +
+			"<th class=\"text-right\">End</th>" +
+			"<th class=\"text-right\">Offset</th>"
+		HTMLTH1 += "<th colspan=\"6\" class=\"text-center\">Row Stats</th>"
+		HTMLTH2 += "<th class=\"text-right\">Actual</th>" +
+			"<th class=\"text-right\">Avg</th>" +
+			"<th class=\"text-right\">Max</th>" +
+			"<th class=\"text-right\">Seg</th>" +
 			"<th class=\"text-right\">Workers</th>"
-
 	}
-	HTML += "</tr>\n"
+
+	HTMLTH1 += "</tr>\n"
+	HTMLTH2 += "</tr>\n"
+
+	HTML += HTMLTH1
+	HTML += HTMLTH2
+
 	HTML += RenderNodeHtml(e.Plans[0].TopNode, 0)
 	HTML += `</table>`
 
