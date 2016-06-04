@@ -273,6 +273,20 @@ func (n *Node) checkNodeDataSkew() {
 	}
 }
 
+// Check filter using function
+// Example:
+//     upper(brief_status::text) = ANY ('{SIGNED,BRIEF,PROPO}'::text[])
+//
+func (n *Node) checkNodeFilterWithFunction() {
+	re := regexp.MustCompile(`\S+\(.*\) `)
+
+	if re.MatchString(n.Filter) {
+		n.Warnings = append(n.Warnings, Warning{
+			"Filter using function",
+			"Check if function can be avoided"})
+	}
+}
+
 // ------------------------------------------------------------
 // Checks relating to the over all Explain output
 // ------------------------------------------------------------
@@ -410,6 +424,7 @@ func parseNodeExtraInfo(n *Node) error {
 	n.SpillReuse = -1
 	n.PartSelected = -1
 	n.PartTotal = -1
+	n.Filter = ""
 	n.IsAnalyzed = false
 
 	// Parse the remaining lines
@@ -576,7 +591,7 @@ func parseNodeExtraInfo(n *Node) error {
 		}
 
 		// FILTER
-		re = regexp.MustCompile(`Filter: (\S+)`)
+		re = regexp.MustCompile(`Filter: (.*)`)
 		m = re.FindStringSubmatch(line)
 		if len(m) == re.NumSubexp()+1 {
 			n.Filter = m[1]
@@ -1049,6 +1064,7 @@ func (e *Explain) InitPlan(plantext string) error {
 		e.Nodes[i].checkNodeScans()
 		e.Nodes[i].checkNodePartitionScans()
 		e.Nodes[i].checkNodeDataSkew()
+		e.Nodes[i].checkNodeFilterWithFunction()
 	}
 
 	// Run Explain checks
