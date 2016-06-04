@@ -747,20 +747,27 @@ func (e *Explain) parseRuntime(line string) {
 }
 
 // Parse all the lines in to empty structs with only ExtraInfo populated
-func (e *Explain) parseLines() {
+func (e *Explain) parseLines() error {
 	log.Debugf("ParseLines\n")
 	log.Debugf("Parsing %d lines\n", len(e.lines))
 	e.planFinished = false
+
+	var err error
 	// Loop through lines
 	for e.lineOffset = 0; e.lineOffset < len(e.lines); e.lineOffset++ {
 		log.Debugf("------------------------------ LINE %d ------------------------------\n", e.lineOffset+1)
 		log.Debugf("%s\n", e.lines[e.lineOffset])
-		e.parseline(e.lines[e.lineOffset])
+		err = e.parseline(e.lines[e.lineOffset])
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // Parse each line
-func (e *Explain) parseline(line string) {
+func (e *Explain) parseline(line string) error {
 	indent := getIndent(line)
 
 	// Ignore whitespace, "QUERY PLAN" and "-"
@@ -810,7 +817,7 @@ func (e *Explain) parseline(line string) {
 
 	}
 
-	return
+	return nil
 }
 
 // Populate SubNodes/SubPlans arrays for each node, which results
@@ -1056,7 +1063,10 @@ func (e *Explain) InitPlan(plantext string) error {
 	e.lines = strings.Split(string(plantext), "\n")
 
 	// Parse lines in to node objects
-	e.parseLines()
+	err := e.parseLines()
+	if err != nil {
+		return err
+	}
 
 	if len(e.Nodes) == 0 {
 		return errors.New("Could not find any nodes in plan")
