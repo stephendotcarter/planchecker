@@ -24,6 +24,7 @@ type Node struct {
 	Slice       int64
 	StartupCost float64
 	TotalCost   float64
+	NodeCost    float64
 	Rows        int64
 	Width       int64
 
@@ -906,17 +907,20 @@ func (e *Explain) BuildTree() {
 
 func (n *Node) CalculateSubNodeDiff() {
 	msChild := 0.0
+	costChild := 0.0
 	for _, s := range n.SubNodes {
 		//log.Debugf("\tSUBNODE%s", s.Operator)
 		msChild += s.MsEnd
+		costChild += s.TotalCost
 	}
 
 	for _, s := range n.SubPlans {
 		//log.Debugf("\tSUBPLANNODE%s", s.TopNode.Operator)
-		msChild += s.TopNode.MsEnd
+		costChild += s.TopNode.TotalCost
 	}
 
 	n.MsNode = n.MsEnd - msChild
+	n.NodeCost = n.TotalCost - costChild
 }
 
 // Render node for output to console

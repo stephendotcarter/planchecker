@@ -120,11 +120,13 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 			"<td class=\"text-right\">%s</td>"+
 			"<td class=\"text-right\">%.2f</td>"+
 			"<td class=\"text-right\">%.2f</td>"+
+			"<td class=\"text-right\">%.2f</td>"+
 			"<td class=\"text-right\">%d</td>"+
 			"<td class=\"text-right\">%d</td>\n",
 		n.Object,
 		n.ObjectType,
 		n.StartupCost,
+		n.NodeCost,
 		n.TotalCost,
 		n.Width,
 		n.Rows)
@@ -210,13 +212,14 @@ func RenderExplainHtml(e *plan.Explain) string {
 	HTMLTH1 := "<tr>"
 	HTMLTH1 = "<th></th>" +
 	"<th colspan=\"2\" class=\"text-center\">Object</th>" +
-	"<th colspan=\"2\" class=\"text-center\">Cost</th>" +
+	"<th colspan=\"3\" class=\"text-center\">Cost</th>" +
 	"<th colspan=\"2\" class=\"text-center\">Estimated</th>"
 	HTMLTH2 := "<tr>"
 	HTMLTH2 += "<th>Query Plan:</th>" +
 		"<th class=\"text-right\">Name</th>" +
 		"<th class=\"text-right\">Type</th>" +
 		"<th class=\"text-right\">Startup</th>" +
+		"<th class=\"text-right\">Node</th>" +
 		"<th class=\"text-right\">Total</th>" +
 		"<th class=\"text-right\">Width</th>" +
 		"<th class=\"text-right\">Rows</th>"
