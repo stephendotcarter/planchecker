@@ -380,6 +380,42 @@ var (
 					}
 				}
 			}},
+		ExplainCheck{
+			"checkExplainEnableGucNonDefault",
+			"\"enable_\" GUCs configured with non-default values",
+			[]string{"legacy", "orca"},
+			func (e *Explain) {
+				// Default GUC values.
+				// http://gpdb.docs.pivotal.io/4340/guc_config-topic3.html
+				defaults := map[string]string{
+					"enable_bitmapscan": "on",
+					"enable_groupagg": "on",
+					"enable_hashagg": "on",
+					"enable_hashjoin": "on",
+					"enable_indexscan": "on",
+					"enable_seqscan": "on",
+					"enable_sort": "on",
+					"enable_tidscan": "on",
+					"enable_nestloop": "off",
+					"enable_mergejoin": "off",
+				}
+
+				// Settings:  enable_hashjoin=off; enable_indexscan=off; join_collapse_limit=1; optimizer=on
+				re := regexp.MustCompile(`enable_`)
+
+				for _, s := range e.Settings {
+					if re.MatchString(s.Name) {
+						if value, ok := defaults[s.Name]; ok {
+							// Only report if NOT default value
+							if s.Value != value {
+								e.Warnings = append(e.Warnings, Warning{
+									fmt.Sprintf("\"%s\" GUC has non-default value \"%s\"", s.Name, s.Value),
+									fmt.Sprintf("Check if \"%s\" GUC is required", s.Name)})
+							}
+						}
+					}
+				}
+			}},
 	}
 
 	indentDepth  = 4  // Used for printing the plan
