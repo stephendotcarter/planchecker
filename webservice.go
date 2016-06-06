@@ -21,9 +21,45 @@ func LoadHtml(file string) string {
 	return string(filedata)
 }
 
+func GenerateChecklistHtml() string {
+	checks := ""
+	//checks += "<table class=\"table table-bordered table-condensed table-striped\">\n"
+	checks += "<ul>\n"
+	//checks += "<tr><th colspan=\"2\">Node Checks</th></tr>\n"
+	//checks += "<tr><th class=\"text-left\">Description</th></tr>"
+	//checks += "<tr><th class=\"text-left\">Description</th><th class=\"text-left\">Scope</th></tr>"
+	for _, c := range plan.NODECHECKS {
+		//checks += fmt.Sprintf("<tr><td>%s</td><td>", c.Description)
+		//checks += fmt.Sprintf("<tr><td>%s</td></tr>", c.Description)
+		checks += fmt.Sprintf("<li>%s</li>", c.Description)
+		//for _, s := range c.Scope {
+		//	checks += fmt.Sprintf("<span class=\"label label-primary\">%s</span> ", s)
+		//}
+		//checks += fmt.Sprintf("</td></tr>\n")
+	}
+	//checks += "<tr><th colspan=\"2\">Explain</th></tr>\n"
+	//checks += "<tr><th class=\"text-left\">Description</th><th class=\"text-left\">Scope</th></tr>"
+	for _, c := range plan.EXPLAINCHECKS {
+		//checks += fmt.Sprintf("<tr><td>%s</td><td>", c.Description)
+		//checks += fmt.Sprintf("<tr><td>%s</td></tr>", c.Description)
+		checks += fmt.Sprintf("<li>%s</li>", c.Description)
+		//for _, s := range c.Scope {
+		//	checks += fmt.Sprintf("<span class=\"label label-primary\">%s</span> ", s)
+		//}
+		//checks += fmt.Sprintf("</td></tr>\n")
+	}
+	//checks += "</table>\n"
+	checks += "</ul>\n"
+	return checks
+}
+
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	// Load HTML
 	pageHtml := LoadHtml("templates/index.html")
+
+	checklistHtml := GenerateChecklistHtml()
+
+	pageHtml = fmt.Sprintf(pageHtml, checklistHtml)
 
 	// Print the response
 	fmt.Fprintf(w, pageHtml)
@@ -305,6 +341,11 @@ func main() {
 	// Add handlers for each URL
 	// Basic Index page
 	r.HandleFunc("/", IndexHandler)
+
+	// Server files from /assets directory
+	// This avoid loading from external sources
+	s := http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets/")))
+	r.PathPrefix("/assets/").Handler(s)
 
 	// Reload an already submitted plan
 	//r.HandleFunc("/plan/{planId}", PlanHandler)

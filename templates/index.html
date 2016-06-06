@@ -2,40 +2,28 @@
 <html lang="en">
 <head>
     <title>planchecker</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://bootswatch.com/flatly/bootstrap.min.css">
-
-    <style>
-    body{
-        margin-top:75px;
-        margin-bottom: 40px;
-    }
-    </style>
+    <link rel="stylesheet" href="/assets/bootstrap.min.css">
 </head>
 <body>
 
-<nav class="navbar navbar-default navbar-fixed-top">
-    <div class="container-fluid">
-        <div class="navbar-header">
-            <a class="navbar-brand" href="#">planchecker</a>
-            </div>
-            <div id="navbar" class="collapse navbar-collapse">
-            <!--<ul class="nav navbar-nav">
-                <li class="active"><a href="#">Home</a></li>
-                <li><a href="#about">About</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>-->
-        </div><!--/.nav-collapse -->
-    </div>
-</nav>
+<ol class="breadcrumb">
+    <li><strong>planchecker for Greenplum</strong></li>
+    <li><a href="/">Home</a></li>
+</ol>
 
+<!-- CONTAINER START -->
 <div class="container-fluid">
-    <p><code>Copy/paste</code> or <code>Choose File</code> and click <code>Submit</code>.</p>
-    <form method="POST" action="/plan/" enctype="multipart/form-data">
+    <!-- ROW START -->
     <div class="row">
-        <div class="col-xs-12">
-                <textarea class="form-control" name="plantext" id="plantext" rows="20" style="margin-bottom:10px">
-Timing is on.
+        <!-- COL START -->
+        <div class="col-sm-6">
+            <!-- FORM START -->
+            <h3>New EXPLAIN ANALYZE</h3>
+
+            <p><code>Copy/paste</code> or <code>Choose File</code> and click <code>Submit</code>.</p>
+
+            <form method="POST" action="/plan/" enctype="multipart/form-data">
+                <textarea class="form-control" name="plantext" id="plantext" rows="12" style="margin-bottom:10px">
                                                                                              QUERY PLAN                                                                                              
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Gather Motion 64:1  (slice12; segments: 64)  (cost=665851.67..41163590.78 rows=142 width=1073)
@@ -124,22 +112,73 @@ Timing is on.
 (10792 rows)
 
 Time: 36.880 ms
-                </textarea>
-        </div>
-    </div>
-    <div class="row">
-      <div class="col-xs-12">
-        <label class="btn btn-default btn-file">
-        Choose File <input type="file" name="uploadfile" style="display: none;" onchange="$('#upload-file-info').html($(this).prop('files')[0]['name'] );">
-        </label>
-        <span class='label label-info' id="upload-file-info"></span>
-        <button type="submit" class="btn btn-success pull-right">Submit</button>
-      </div>
-    </div>
-    </form>
-</div>
+            </textarea>
+            <label class="btn btn-primary btn-file">
+            Choose File <input type="file" name="uploadfile" style="display: none;" onchange="$('#upload-file-info').html($(this).prop('files')[0]['name'] );">
+            </label>
+            <span class='label label-info' id="upload-file-info"></span>
+            <button type="submit" class="btn btn-success pull-right">Submit</button>
+            </form>
+            <!-- FORM END -->
 
-<script   src="https://code.jquery.com/jquery-2.2.4.min.js"   integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="   crossorigin="anonymous"></script>
+            <!-- STEPS START -->
+            <h3>Recommended Steps</h3>
+
+            <p>When a query plan is generated whitespace is used to indent each node. It's important to keep the correct whitespace indentation when submitting the plan to planchecker or else the plan may be parsed incorrectly.</p>
+
+            <p>The following steps are recommended for best results:
+            <ol>
+                <li>Create an .sql file containing the query:
+                <pre>$ cat myquery.sql
+EXPLAIN SELECT * FROM mytable
+WHERE date = '1955-11-05' AND location = 'Hill Valley';</pre>
+                </li>
+                <li>Execute the query using psql and redirect the output:
+                <pre>$ psql -f myquery.sql > myquery.sql.out</pre>
+                </li>
+                <li>Upload the output to planchecker:<br>
+                <code>Choose File</code>, select <code>myquery.sql.out</code>, click <code>Submit</code>
+                </li>
+            </ol>
+            Alternatively you can <code>Copy/paste</code> the query plan but make sure whitespace formatting is not lost.
+            </p>
+            <!-- STEPS END -->
+        </div>
+        <!-- COL END -->
+
+        <!-- COL START -->
+        <div class="col-sm-6">
+            <!-- ABOUT START -->
+            <h3>About</h3>
+
+            <p>planchecker parses <code>EXPLAIN</code> or <code>EXPLAIN ANALYZE</code> output generated from <a href="http://greenplum.org/" target="_blank">Greenplum</a> database and checks for common issues which may affect query performance. While the query plans look similar to Postgres they are formatted differently and contain nodes which are specific to Greenplum.</p>
+
+            <p>Because <a href="http://greenplum.org/" target="_blank">Greenplum</a> and <a href="http://hawq.incubator.apache.org/" target="_blank">Apache HAWQ</a> share similar codebase, planchecker should also work with <a href="http://hawq.incubator.apache.org/" target="_blank">Apache HAWQ</a> query plans.</p>
+            <!-- ABOUT END -->
+
+            <!-- CHECKS START -->
+            <h3>Checks</h3>
+
+            <p>Here are the current checks:</p>
+            %s
+            <p>New checks may be added in future.</p>
+            <!-- CHECKS END -->
+
+        </div>
+        <!-- COL END -->
+    </div>
+    <!-- ROW END -->
+
+    <hr class="small">
+
+    <footer>
+        <p class="text-muted text-center">planchecker for Greenplum</p>
+    </footer>
+
+</div>
+<!-- CONTAINER END -->
+
+<script src="/assets/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
 
 </body>
 </html>

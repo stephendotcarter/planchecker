@@ -78,6 +78,20 @@ type Warning struct {
 	Resolution string // What should be done to resolve it
 }
 
+type NodeCheck struct {
+	Name        string
+	Description string
+	Scope       []string
+	Exec        func(*Node)
+}
+
+type ExplainCheck struct {
+	Name        string
+	Description string
+	Scope       []string
+	Exec        func(*Explain)
+}
+
 // Slice stats parsed from EXPLAIN ANALYZE output
 type SliceStat struct {
 	Name          string
@@ -136,6 +150,238 @@ var (
 		"RUNTIME":   regexp.MustCompile(` Total runtime: `),
 	}
 
+	// Keep all checks in NODECHEKS and EXPLAINCHECKS so that we can
+	// dynamically create a list of checks to display in webapp
+	
+	// ------------------------------------------------------------
+	// Checks relating to each node
+	// ------------------------------------------------------------
+	NODECHECKS = []NodeCheck{
+		NodeCheck{
+			"checkNodeEstimatedRows",
+			"Scan node with estimated rows equal to 1",
+			[]string{"legacy", "orca"},
+			func (n *Node) {
+				re := regexp.MustCompile(`(Dynamic Table|Table|Parquet table|Bitmap Index|Bitmap Append-Only Row-Oriented|Seq) Scan`)
+				if re.MatchString(n.Operator) {
+					if n.Rows == 1 {
+						warningAction := ""
+						// Preformat the string here
+						if n.ObjectType == "TABLE" {
+							warningAction = fmt.Sprintf("ANALYZE on table")
+						} else if n.ObjectType == "INDEX" {
+							warningAction = fmt.Sprintf("REINDEX on index")
+						}
+
+						// If EXPLAIN ANALYZE output then have to check further
+						if n.IsAnalyzed == true {
+							if n.ActualRows > 1 || n.AvgRows > 1 {
+								n.Warnings = append(n.Warnings, Warning{
+									"Actual rows is higher than estimated rows",
+									fmt.Sprintf("Need to run %s \"%s\"", warningAction, n.Object)})
+							}
+							// Else just flag as a potential not analyzed table
+						} else {
+							n.Warnings = append(n.Warnings, Warning{
+								"Estimated rows is 1",
+								fmt.Sprintf("May need to run %s \"%s\"", warningAction, n.Object)})
+						}
+					}
+				}
+			}},
+		NodeCheck{
+			"checkNodeNestedLoop",
+			"Nested Loops",
+			[]string{"legacy", "orca"},
+			func (n *Node) {
+				re := regexp.MustCompile(`Nested Loop`)
+				if re.MatchString(n.Operator) {
+					n.Warnings = append(n.Warnings, Warning{
+						"Nested Loop",
+						"Review query"})
+				}
+			}},
+		NodeCheck{
+			"checkNodeSpilling",
+			"Spill files",
+			[]string{"legacy", "orca"},
+			func (n *Node) {
+				if n.SpillFile >= 1 {
+					n.Warnings = append(n.Warnings, Warning{
+						fmt.Sprintf("Total %d spilling segments found", n.SpillFile),
+						"Review query"})
+				}
+			}},
+		NodeCheck{
+			"checkNodeScans",
+			"Node looping multiple times",
+			[]string{"legacy", "orca"},
+			func (n *Node) {
+				if n.Scans > 1 {
+					n.Warnings = append(n.Warnings, Warning{
+						fmt.Sprintf("This node is executed %d times", n.Scans),
+						"Review query"})
+				}
+			}},
+		NodeCheck{
+			"checkNodePartitionScans",
+			"Number of partition scans greater than 100 or 25%%",
+			[]string{"legacy", "orca"},
+			func (n *Node) {
+				partitionThreshold := int64(100)
+				partitionPrctThreshold := int64(25)
+
+				// Planner
+				re := regexp.MustCompile(`Append`)
+				if re.MatchString(n.Operator) {
+					// Warn if the Append node has more than 100 subnodes
+					if int64(len(n.SubNodes)) >= partitionThreshold {
+						n.Warnings = append(n.Warnings, Warning{
+							fmt.Sprintf("Detected %d partition scans", len(n.SubNodes)),
+							"Check if partitions can be eliminated"})
+					}
+				}
+
+				// ORCA
+				re = regexp.MustCompile(`Partition Selector`)
+				if re.MatchString(n.Operator) {
+					// Warn if selected partitions is great than 100
+					if n.PartSelected >= partitionThreshold {
+						n.Warnings = append(n.Warnings, Warning{
+							fmt.Sprintf("Detected %d partition scans", n.PartSelected),
+							"Check if partitions can be eliminated"})
+					}
+
+					// Warn if selected partitons is 0, may be an issue
+					if n.PartSelected == 0 {
+						n.Warnings = append(n.Warnings, Warning{
+							"Zero partitions selected",
+							"Review query"})
+						// Also warn if greater than 25% of total partitions were selected.
+						// I just chose 25% for now... may need to be adjusted to a more reasonable value
+					} else if (n.PartSelected * 100 / n.PartTotal) >= partitionPrctThreshold {
+						n.Warnings = append(n.Warnings, Warning{
+							fmt.Sprintf("%d%% (%d out of %d) partitions selected", (n.PartSelected * 100 / n.PartTotal), n.PartSelected, n.PartTotal),
+							"Check if partitions can be eliminated"})
+					}
+				}
+			}},
+		NodeCheck{
+			"checkNodeDataSkew",
+			"Data skew",
+			[]string{"legacy", "orca"},
+			func (n *Node) {
+				threshold := 10000.0
+
+				// Only proceed if over threshold
+				if n.ActualRows >= threshold || n.AvgRows >= threshold {
+					// Handle AvgRows
+					if n.AvgRows > 0 {
+						// A segment has more than 50% of all rows
+						// Only do this if workers > 2 otherwise this situation will report skew:
+						//     Rows out:  Avg 500000.0 rows x 2 workers.  Max 500001 rows (seg0)
+						// but seg0 only has 1 extra row
+						if (n.MaxRows > (n.AvgRows * float64(n.Workers) / 2.0)) && n.Workers > 2 {
+							n.Warnings = append(n.Warnings, Warning{
+								fmt.Sprintf("Data skew on segment %s", n.MaxSeg),
+								"Review query"})
+						}
+						// Handle ActualRows
+						// If ActualRows is set and MaxSeg is set then this
+						// segment has the highest rows
+					} else if n.ActualRows > 0 && n.MaxSeg != "-" {
+						n.Warnings = append(n.Warnings, Warning{
+							fmt.Sprintf("Data skew on segment %s", n.MaxSeg),
+							"Review query"})
+					}
+				}
+			}},
+		NodeCheck{
+			"checkNodeFilterWithFunction",
+			"Filter clause using function",
+			[]string{"legacy", "orca"},
+			// Example:
+			//     upper(brief_status::text) = ANY ('{SIGNED,BRIEF,PROPO}'::text[])
+			//
+			func (n *Node) {
+				re := regexp.MustCompile(`\S+\(.*\) `)
+
+				if re.MatchString(n.Filter) {
+					n.Warnings = append(n.Warnings, Warning{
+						"Filter using function",
+						"Check if function can be avoided"})
+				}
+			}},
+	}
+
+	// ------------------------------------------------------------
+	// Checks relating to the over all Explain output
+	// ------------------------------------------------------------
+	EXPLAINCHECKS = []ExplainCheck{
+		ExplainCheck{
+			"checkExplainMotionCount",
+			"Number of Broadcast/Redistribute Motion nodes greater than 5",
+			[]string{"legacy", "orca"},
+			func (e *Explain) {
+				motionCount := 0
+				motionCountLimit := 5
+
+				re := regexp.MustCompile(`(Broadcast|Redistribute) Motion`)
+
+				for _, n := range e.Nodes {
+					if re.MatchString(n.Operator) {
+						motionCount++
+					}
+				}
+
+				if motionCount >= motionCountLimit {
+					e.Warnings = append(e.Warnings, Warning{
+						fmt.Sprintf("Found %d Redistribute/Broadcast motions", motionCount),
+						"Review query"})
+				}
+			}},
+		ExplainCheck{
+			"checkExplainSliceCount",
+			"Number of slices greater than 100",
+			[]string{"legacy", "orca"},
+			func (e *Explain) {
+				sliceCount := 0
+				sliceCountLimit := 100
+
+				for _, n := range e.Nodes {
+					if n.Slice > -1 {
+						sliceCount++
+					}
+				}
+
+				if sliceCount > sliceCountLimit {
+					e.Warnings = append(e.Warnings, Warning{
+						fmt.Sprintf("Found %d slices", sliceCount),
+						"Review query"})
+				}
+			}},
+		ExplainCheck{
+			"checkExplainPlannerFallback",
+			"ORCA fallback to legacy query planner",
+			[]string{"legacy", "orca"},
+			func (e *Explain) {
+				// Settings:  optimizer=on
+				// Optimizer status: legacy query optimizer
+				re := regexp.MustCompile(`legacy query optimizer`)
+
+				if re.MatchString(e.Optimizer) {
+					for _, s := range e.Settings {
+						if s.Name == "optimizer" && s.Value == "on" {
+							e.Warnings = append(e.Warnings, Warning{
+								"ORCA enabled but plan was produced by legacy query optimizer",
+								"No Action Required"})
+							break
+						}
+					}
+				}
+			}},
+	}
+
 	indentDepth  = 4  // Used for printing the plan
 	warningColor = 31 // RED
 )
@@ -143,211 +389,6 @@ var (
 // Calculate indent by triming white space and checking diff on string length
 func getIndent(line string) int {
 	return len(line) - len(strings.TrimLeft(line, " "))
-}
-
-// ------------------------------------------------------------
-// Checks relating to each node
-// ------------------------------------------------------------
-
-// Check Scan nodes to see if estimated rows == 1
-func (n *Node) checkNodeEstimatedRows() {
-	re := regexp.MustCompile(`(Dynamic Table|Table|Parquet table|Bitmap Index|Bitmap Append-Only Row-Oriented|Seq) Scan`)
-	if re.MatchString(n.Operator) {
-		if n.Rows == 1 {
-			warningAction := ""
-			// Preformat the string here
-			if n.ObjectType == "TABLE" {
-				warningAction = fmt.Sprintf("ANALYZE on table")
-			} else if n.ObjectType == "INDEX" {
-				warningAction = fmt.Sprintf("REINDEX on index")
-			}
-
-			// If EXPLAIN ANALYZE output then have to check further
-			if n.IsAnalyzed == true {
-				if n.ActualRows > 1 || n.AvgRows > 1 {
-					n.Warnings = append(n.Warnings, Warning{
-						"Actual rows is higher than estimated rows",
-						fmt.Sprintf("Need to run %s \"%s\"", warningAction, n.Object)})
-				}
-				// Else just flag as a potential not analyzed table
-			} else {
-				n.Warnings = append(n.Warnings, Warning{
-					"Estimated rows is 1",
-					fmt.Sprintf("May need to run %s \"%s\"", warningAction, n.Object)})
-			}
-		}
-	}
-}
-
-// Check for Nested Loops
-func (n *Node) checkNodeNestedLoop() {
-	re := regexp.MustCompile(`Nested Loop`)
-	if re.MatchString(n.Operator) {
-		n.Warnings = append(n.Warnings, Warning{
-			"Nested Loop",
-			"Review query"})
-	}
-}
-
-// Check for spill files
-func (n *Node) checkNodeSpilling() {
-	if n.SpillFile >= 1 {
-		n.Warnings = append(n.Warnings, Warning{
-			fmt.Sprintf("Total %d spilling segments found", n.SpillFile),
-			"Review query"})
-	}
-}
-
-// Check for scan loops
-func (n *Node) checkNodeScans() {
-	if n.Scans > 1 {
-		n.Warnings = append(n.Warnings, Warning{
-			fmt.Sprintf("This node is executed %d times", n.Scans),
-			"Review query"})
-	}
-}
-
-// Check for partition scan
-func (n *Node) checkNodePartitionScans() {
-	partitionThreshold := int64(100)
-	partitionPrctThreshold := int64(25)
-
-	// Planner
-	re := regexp.MustCompile(`Append`)
-	if re.MatchString(n.Operator) {
-		// Warn if the Append node has more than 100 subnodes
-		if int64(len(n.SubNodes)) >= partitionThreshold {
-			n.Warnings = append(n.Warnings, Warning{
-				fmt.Sprintf("Detected %d partition scans", len(n.SubNodes)),
-				"Check if partitions can be eliminated"})
-		}
-	}
-
-	// PQO
-	re = regexp.MustCompile(`Partition Selector`)
-	if re.MatchString(n.Operator) {
-		// Warn if selected partitions is great than 100
-		if n.PartSelected >= partitionThreshold {
-			n.Warnings = append(n.Warnings, Warning{
-				fmt.Sprintf("Detected %d partition scans", n.PartSelected),
-				"Check if partitions can be eliminated"})
-		}
-
-		// Warn if selected partitons is 0, may be an issue
-		if n.PartSelected == 0 {
-			n.Warnings = append(n.Warnings, Warning{
-				"Zero partitions selected",
-				"Review query"})
-			// Also warn if greater than 25% of total partitions were selected.
-			// I just chose 25% for now... may need to be adjusted to a more reasonable value
-		} else if (n.PartSelected * 100 / n.PartTotal) >= partitionPrctThreshold {
-			n.Warnings = append(n.Warnings, Warning{
-				fmt.Sprintf("%d%% (%d out of %d) partitions selected", (n.PartSelected * 100 / n.PartTotal), n.PartSelected, n.PartTotal),
-				"Check if partitions can be eliminated"})
-		}
-	}
-}
-
-// Check for data skew
-func (n *Node) checkNodeDataSkew() {
-	threshold := 10000.0
-
-	// Only proceed if over threshold
-	if n.ActualRows >= threshold || n.AvgRows >= threshold {
-		// Handle AvgRows
-		if n.AvgRows > 0 {
-			// A segment has more than 50% of all rows
-			// Only do this if workers > 2 otherwise this situation will report skew:
-			//     Rows out:  Avg 500000.0 rows x 2 workers.  Max 500001 rows (seg0)
-			// but seg0 only has 1 extra row
-			if (n.MaxRows > (n.AvgRows * float64(n.Workers) / 2.0)) && n.Workers > 2 {
-				n.Warnings = append(n.Warnings, Warning{
-					fmt.Sprintf("Data skew on segment %s", n.MaxSeg),
-					"Review query"})
-			}
-			// Handle ActualRows
-			// If ActualRows is set and MaxSeg is set then this
-			// segment has the highest rows
-		} else if n.ActualRows > 0 && n.MaxSeg != "-" {
-			n.Warnings = append(n.Warnings, Warning{
-				fmt.Sprintf("Data skew on segment %s", n.MaxSeg),
-				"Review query"})
-		}
-	}
-}
-
-// Check filter using function
-// Example:
-//     upper(brief_status::text) = ANY ('{SIGNED,BRIEF,PROPO}'::text[])
-//
-func (n *Node) checkNodeFilterWithFunction() {
-	re := regexp.MustCompile(`\S+\(.*\) `)
-
-	if re.MatchString(n.Filter) {
-		n.Warnings = append(n.Warnings, Warning{
-			"Filter using function",
-			"Check if function can be avoided"})
-	}
-}
-
-// ------------------------------------------------------------
-// Checks relating to the over all Explain output
-// ------------------------------------------------------------
-
-// Check if the number of Broadcast/Redistribute Motion nodes is > 5
-func (e *Explain) checkExplainMotionCount() {
-	motionCount := 0
-	motionCountLimit := 5
-
-	re := regexp.MustCompile(`(Broadcast|Redistribute) Motion`)
-
-	for _, n := range e.Nodes {
-		if re.MatchString(n.Operator) {
-			motionCount++
-		}
-	}
-
-	if motionCount >= motionCountLimit {
-		e.Warnings = append(e.Warnings, Warning{
-			fmt.Sprintf("Found %d Redistribute/Broadcast motions", motionCount),
-			"Review query"})
-	}
-}
-
-// Check if the number of slices is > 100
-func (e *Explain) checkExplainSliceCount() {
-	sliceCount := 0
-	sliceCountLimit := 100
-
-	for _, n := range e.Nodes {
-		if n.Slice > -1 {
-			sliceCount++
-		}
-	}
-
-	if sliceCount > sliceCountLimit {
-		e.Warnings = append(e.Warnings, Warning{
-			fmt.Sprintf("Found %d slices", sliceCount),
-			"Review query"})
-	}
-}
-
-// Check if optimizer=on but status = legacy
-func (e *Explain) checkExplainPlannerFallback() {
-	// Settings:  optimizer=on
-	// Optimizer status: legacy query optimizer
-	re := regexp.MustCompile(`legacy query optimizer`)
-
-	if re.MatchString(e.Optimizer) {
-		for _, s := range e.Settings {
-			if s.Name == "optimizer" && s.Value == "on" {
-				e.Warnings = append(e.Warnings, Warning{
-					"PQO enabled but plan was produced by legacy query optimizer",
-					"No Action Required"})
-				break
-			}
-		}
-	}
 }
 
 // Example data to be parsed
@@ -1098,19 +1139,15 @@ func (e *Explain) InitPlan(plantext string) error {
 		n.CalculatePercentage(e.Nodes[0].TotalCost, e.Nodes[0].MsEnd)
 
 		// Run Node checks
-		n.checkNodeEstimatedRows()
-		n.checkNodeNestedLoop()
-		n.checkNodeSpilling()
-		n.checkNodeScans()
-		n.checkNodePartitionScans()
-		n.checkNodeDataSkew()
-		n.checkNodeFilterWithFunction()
+		for _, c := range NODECHECKS {
+			c.Exec(n)
+		}
 	}
 
 	// Run Explain checks
-	e.checkExplainMotionCount()
-	e.checkExplainSliceCount()
-	e.checkExplainPlannerFallback()
+	for _, c := range EXPLAINCHECKS {
+		c.Exec(e)
+	}
 
 	return nil
 }
