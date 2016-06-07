@@ -1115,7 +1115,9 @@ func (e *Explain) PrintPlan() {
 	if e.MemoryUsed > 0 {
 		fmt.Println("Statement statistics:")
 		fmt.Printf("\tMemory used: %d\n", e.MemoryUsed)
-		fmt.Printf("\tMemory wanted: %d\n", e.MemoryWanted)
+		if e.MemoryWanted > 0 {
+			fmt.Printf("\tMemory wanted: %d\n", e.MemoryWanted)
+		}
 	}
 
 	if len(e.Settings) > 0 {

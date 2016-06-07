@@ -454,7 +454,9 @@ func RenderExplainHtml(e *plan.Explain) string {
 	if e.MemoryUsed > 0 {
 		HTML += fmt.Sprintf("<strong>Statement statistics:</strong>\n")
 		HTML += fmt.Sprintf("\tMemory used: %d\n", e.MemoryUsed)
-		HTML += fmt.Sprintf("\tMemory wanted: %d\n", e.MemoryWanted)
+		if e.MemoryWanted > 0 {
+			HTML += fmt.Sprintf("\tMemory wanted: %d\n", e.MemoryWanted)
+		}
 	}
 
 	if len(e.Settings) > 0 {
