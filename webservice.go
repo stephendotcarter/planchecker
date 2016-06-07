@@ -144,36 +144,36 @@ func InsertPlan(planText string) (PlanRecord, error) {
 }
 
 func GenerateChecklistHtml() string {
-	checks := ""
-	//checks += "<table class=\"table table-bordered table-condensed table-striped\">\n"
-	checks += "<ul>\n"
-	//checks += "<tr><th colspan=\"2\">Node Checks</th></tr>\n"
-	//checks += "<tr><th class=\"text-left\">Description</th></tr>"
-	//checks += "<tr><th class=\"text-left\">Description</th><th class=\"text-left\">Scope</th></tr>"
-	for _, c := range plan.NODECHECKS {
-		//checks += fmt.Sprintf("<tr><td>%s</td><td>", c.Description)
-		//checks += fmt.Sprintf("<tr><td>%s</td></tr>", c.Description)
-		checks += fmt.Sprintf("<li>%s</li>", c.Description)
-		//for _, s := range c.Scope {
-		//	checks += fmt.Sprintf("<span class=\"label label-primary\">%s</span> ", s)
-		//}
-		//checks += fmt.Sprintf("</td></tr>\n")
-	}
-	//checks += "<tr><th colspan=\"2\">Explain</th></tr>\n"
-	//checks += "<tr><th class=\"text-left\">Description</th><th class=\"text-left\">Scope</th></tr>"
-	for _, c := range plan.EXPLAINCHECKS {
-		//checks += fmt.Sprintf("<tr><td>%s</td><td>", c.Description)
-		//checks += fmt.Sprintf("<tr><td>%s</td></tr>", c.Description)
-		checks += fmt.Sprintf("<li>%s</li>", c.Description)
-		//for _, s := range c.Scope {
-		//	checks += fmt.Sprintf("<span class=\"label label-primary\">%s</span> ", s)
-		//}
-		//checks += fmt.Sprintf("</td></tr>\n")
-	}
-	//checks += "</table>\n"
-	checks += "</ul>\n"
-	return checks
+    checks := ""
+    checks += "<table class=\"table table-bordered table-condensed table-striped\">\n"
+    //checks += "<tr><th colspan=\"2\">Node Checks</th></tr>\n"
+    checks += "<tr><th class=\"text-left\">Description</th><th class=\"text-left\">Added</th></tr>"
+    for _, c := range plan.NODECHECKS {
+        //checks += fmt.Sprintf("<tr><td>%s</td><td>", c.Description)
+        checks += fmt.Sprintf("<tr><td>%s</td><td>%s</td></tr>", c.Description, c.CreatedAt)
+        //checks += fmt.Sprintf("<li>%s</li>", c.Description)
+        //for _, s := range c.Scope {
+        //  checks += fmt.Sprintf("<span class=\"label label-primary\">%s</span> ", s)
+        //}
+        //checks += fmt.Sprintf("</td></tr>\n")
+    }
+    //checks += "<tr><th colspan=\"2\">Explain</th></tr>\n"
+    //checks += "<tr><th class=\"text-left\">Description</th><th class=\"text-left\">Scope</th></tr>"
+    for _, c := range plan.EXPLAINCHECKS {
+        //checks += fmt.Sprintf("<tr><td>%s</td><td>", c.Description)
+        //checks += fmt.Sprintf("<tr><td>%s</td></tr>", c.Description)
+        //checks += fmt.Sprintf("<li>%s</li>", c.Description)
+        checks += fmt.Sprintf("<tr><td>%s</td><td>%s</td></tr>", c.Description, c.CreatedAt)
+        //for _, s := range c.Scope {
+        //  checks += fmt.Sprintf("<span class=\"label label-primary\">%s</span> ", s)
+        //}
+        //checks += fmt.Sprintf("</td></tr>\n")
+    }
+    checks += "</table>\n"
+    //checks += "</ul>\n"
+    return checks
 }
+
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	// Load HTML
@@ -262,7 +262,7 @@ func GenerateExplain(w http.ResponseWriter, r *http.Request, planRecord PlanReco
 	pageHtml := LoadHtml("templates/plan.html")
 
 	// Generate full plan URL
-	refUrl := fmt.Sprintf("https://%s/plan/%s", r.Host, planRecord.Ref)
+	refUrl := fmt.Sprintf("http://%s/plan/%s", r.Host, planRecord.Ref)
 
 	// If this is a newly submitted plan, disply notification about saving the URL
 	saveNotif := ""

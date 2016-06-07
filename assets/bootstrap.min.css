@@ -24,3 +24,11 @@ hr.small {
     font-family:Menlo,Monaco,Consolas,"Courier New",monospace;
     margin-top:15px;
 }
+.table-nonfluid {
+    width: auto !important;
+}
+@media (min-width: 1200px) {
+    .container{
+        max-width: 1080px;
+    }
+}
