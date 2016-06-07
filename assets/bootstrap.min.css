@@ -27,3 +27,6 @@ hr.small {
 .table-nonfluid {
     width: auto !important;
 }
+.tooltip-inner {
+    white-space:pre-wrap;
+}
