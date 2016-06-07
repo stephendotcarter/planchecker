@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/pivotal-gss/planchecker/plan"
@@ -9,16 +10,137 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	_ "github.com/go-sql-driver/mysql"
+	"database/sql"
+	"math/rand"
+	"time"
 )
 
-var indentDepth = 4
+// Database record
+type PlanRecord struct {
+	Id        int
+	Ref       string
+	Plantext  string
+	CreatedAt string
+}
 
+var (
+	// How many spaces the sub nodes should be indented
+	indentDepth = 4
+
+	// Used for random string generation
+	letterRunes = []rune("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+	// Database constring and connection
+	dbconnstring string
+	dbconn *sql.DB
+)
+
+// Generate random string
+func RandStringRunes(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
+
+// Load HTML from file
 func LoadHtml(file string) string {
 	// Load HTML from file
 	filedata, _ := ioutil.ReadFile(file)
 
 	// Convert to string and return
 	return string(filedata)
+}
+
+// Close database connection
+func CloseDb() {
+	dbconn.Close()
+}
+
+// Open database connection
+func OpenDb() error {
+	var err error
+
+	dbconn, err = sql.Open("mysql", dbconnstring)
+	
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Retrieve plan from database using ref as key
+func SelectPlan(ref string) (PlanRecord, error) {
+	var planRecord PlanRecord
+	var err error
+	
+	// Open connection to DB
+	err = OpenDb()
+	if err != nil {
+		return planRecord, err
+	}
+
+	// Query by ref
+	rows, err := dbconn.Query("SELECT * FROM plans WHERE ref = ?", ref)
+	if err != nil {
+		return planRecord, errors.New("Database query failed")
+	}
+
+	// Retireve the row
+	count := 0
+	for rows.Next() {
+		err = rows.Scan(&planRecord.Id, &planRecord.Ref, &planRecord.Plantext, &planRecord.CreatedAt)
+		if err != nil {
+			return planRecord, errors.New("Retrieving row failed")
+		}
+		count++
+	}
+
+	// Close connection to DB
+	CloseDb()
+
+	if count != 1 {
+		return planRecord, errors.New(fmt.Sprintf("Expected 1 record. Found %d", count))
+	}
+
+	return planRecord, nil
+}
+
+// Insert new plan in to database and return database record
+func InsertPlan(planText string) (PlanRecord, error) {
+	var planRecord PlanRecord
+	var err error
+
+	// Open connection to DB
+	err = OpenDb()
+	if err != nil {
+		return planRecord, err
+	}
+
+	// Populate data
+	// id and created_at will be populated inside database
+	planRecord.Ref = RandStringRunes(8)
+	planRecord.Plantext = planText
+
+	// Prepare the statement
+	stmt, err := dbconn.Prepare("INSERT plans SET ref=?,plantext=?")
+	if err != nil {
+		return planRecord, err
+	}
+
+	// Insert the record
+	_, err = stmt.Exec(planRecord.Ref, planRecord.Plantext)
+	if err != nil {
+		return planRecord, err
+	}
+
+	// Close connection to DB
+	CloseDb()
+
+	return planRecord, nil
 }
 
 func GenerateChecklistHtml() string {
@@ -65,20 +187,25 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, pageHtml)
 }
 
-/*
-func PlanHandler(w http.ResponseWriter, r *http.Request) {
-    // Read plan ID
-    vars := mux.Vars(r)
-    planId := vars["planId"]
+func PlanRefHandler(w http.ResponseWriter, r *http.Request) {
+	// Read plan ID
+	vars := mux.Vars(r)
+	planRef := vars["planRef"]
 
-    // Print the repsonse
-    fmt.Fprintf(w, "Plan %s", planId)
+	// Print the repsonse
+	planRecord, err := SelectPlan(planRef)
+	if err != nil {
+		fmt.Fprintf(w, "Error loading plan from database:\n--\n%s", err)
+		return
+	}
+
+	GenerateExplain(w, r, planRecord)
 }
-*/
 
 func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var planText string
+	var planRecord PlanRecord
 
 	// Attempt to read the uploaded file
 	r.ParseMultipartForm(32 << 20)
@@ -90,7 +217,8 @@ func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
 		buf := new(bytes.Buffer)
 		n, err := buf.ReadFrom(file)
 		if err != nil {
-			fmt.Printf("Error reading from file upload: %s", err)
+			fmt.Fprintf(w, "Error reading from file upload: %s", err)
+			return
 		}
 		fmt.Printf("Read %d bytes from file upload", n)
 		planText = buf.String()
@@ -100,14 +228,30 @@ func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
 		planText = r.FormValue("plantext")
 	}
 
+	planRecord.Plantext = planText
+
+	GenerateExplain(w, r, planRecord)
+}
+
+func GenerateExplain(w http.ResponseWriter, r *http.Request, planRecord PlanRecord) {
+
 	// Create new explain object
 	var explain plan.Explain
 
 	// Init the explain from string
-	err = explain.InitFromString(planText, true)
+	err := explain.InitFromString(planRecord.Plantext, true)
 	if err != nil {
 		fmt.Fprintf(w, "Oops... we had a problem parsing the plan:\n--\n%s\n", err)
 		return
+	}
+
+	// Save the plan if parsing was successful and the plan is not already saved
+	if planRecord.Ref == "" {
+		planRecord, err = InsertPlan(planRecord.Plantext)
+		if err != nil {
+			fmt.Fprintf(w, "Oops... we had a problem saving the plan:\n--\n%s\n", err)
+			return
+		}
 	}
 
 	// Generate the plan HTML
@@ -117,8 +261,17 @@ func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
 	// Load HTML page
 	pageHtml := LoadHtml("templates/plan.html")
 
+	// Generate full plan URL
+	refUrl := fmt.Sprintf("https://%s/plan/%s", r.Host, planRecord.Ref)
+
+	// If this is a newly submitted plan, disply notification about saving the URL
+	saveNotif := ""
+	if planRecord.Id == 0 {
+		saveNotif = fmt.Sprintf("<div class=\"alert alert-info\" style=\"margin-top:20px;\" role=\"alert\">Bookmark this URL if you want to access the results again: <strong>%s</strong></div>", refUrl)
+	}
+
 	// Render with the plan HTML
-	fmt.Fprintf(w, pageHtml, planHtml)
+	fmt.Fprintf(w, pageHtml, planHtml, planRecord.Ref, saveNotif)
 }
 
 // Render node for output to HTML
@@ -325,15 +478,23 @@ func RenderExplainHtml(e *plan.Explain) string {
 }
 
 func main() {
+	// Commence randomness
+	rand.Seed(time.Now().UnixNano())
 
+	// Read port from environment
 	port := os.Getenv("PORT")
-
 	if port == "" {
 		fmt.Println("PORT env variable not set")
 		os.Exit(0)
 	}
-
 	fmt.Printf("Binding to port %s\n", port)
+
+	dbconnstring = os.Getenv("CONSTRING")
+	if dbconnstring == "" {
+		fmt.Println("CONSTRING env variable not set")
+		os.Exit(0)
+	}
+	fmt.Printf("Database %s\n", dbconnstring)
 
 	// Using gorilla/mux as it provides named URL variable parsing
 	r := mux.NewRouter()
@@ -348,7 +509,7 @@ func main() {
 	r.PathPrefix("/assets/").Handler(s)
 
 	// Reload an already submitted plan
-	//r.HandleFunc("/plan/{planId}", PlanHandler)
+	r.HandleFunc("/plan/{planRef}", PlanRefHandler)
 
 	// Receive a POST form when user submits a new plan
 	r.HandleFunc("/plan/", PlanPostHandler)
