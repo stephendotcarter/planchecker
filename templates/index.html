@@ -57,8 +57,9 @@ WHERE date = '1955-11-05' AND location = 'Hill Valley';</pre>
                 <code>Choose File</code>, select <code>myquery.sql.out</code>, click <code>Submit</code>
                 </li>
             </ol>
-            Alternatively you can <code>Copy/paste</code> the query plan but make sure whitespace formatting is not lost.
             </p>
+
+            <p>Alternatively you can <code>Copy/paste</code> the query plan but make sure whitespace formatting is not lost.</p>
             <!-- STEPS END -->
         </div>
         <!-- COL END -->
@@ -69,7 +70,9 @@ WHERE date = '1955-11-05' AND location = 'Hill Valley';</pre>
             <!-- ABOUT START -->
             <h3>About</h3>
 
-            <p>planchecker parses <code>EXPLAIN</code> or <code>EXPLAIN ANALYZE</code> output generated from <a href="http://greenplum.org/" target="_blank">Greenplum</a> database and checks for common issues which may affect query performance. While the query plans look similar to Postgres they are formatted differently and contain nodes which are specific to Greenplum.</p>
+            <p>planchecker parses <code>EXPLAIN</code> or <code>EXPLAIN ANALYZE</code> output generated from <a href="http://greenplum.org/" target="_blank">Greenplum</a> database and checks for common issues which may affect query performance.</p>
+
+            <p>While the query plans look similar to Postgres they are formatted differently and contain nodes which are specific to Greenplum.</p>
 
             <p>Because <a href="http://greenplum.org/" target="_blank">Greenplum</a> and <a href="http://hawq.incubator.apache.org/" target="_blank">Apache HAWQ</a> share similar codebase, planchecker should also work with <a href="http://hawq.incubator.apache.org/" target="_blank">Apache HAWQ</a> query plans.</p>
             <!-- ABOUT END -->
