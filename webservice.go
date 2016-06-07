@@ -31,9 +31,8 @@ var (
 	// Used for random string generation
 	letterRunes = []rune("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-	// Database constring and connection
+	// Database constring
 	dbconnstring string
-	dbconn *sql.DB
 )
 
 // Generate random string
@@ -55,21 +54,21 @@ func LoadHtml(file string) string {
 }
 
 // Close database connection
-func CloseDb() {
+func CloseDb(dbconn *sql.DB) {
 	dbconn.Close()
 }
 
 // Open database connection
-func OpenDb() error {
+func OpenDb() (*sql.DB, error) {
 	var err error
 
-	dbconn, err = sql.Open("mysql", dbconnstring)
+	dbconn, err := sql.Open("mysql", dbconnstring)
 	
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return dbconn, nil
 }
 
 // Retrieve plan from database using ref as key
@@ -78,7 +77,7 @@ func SelectPlan(ref string) (PlanRecord, error) {
 	var err error
 	
 	// Open connection to DB
-	err = OpenDb()
+	dbconn, err := OpenDb()
 	if err != nil {
 		return planRecord, err
 	}
@@ -100,7 +99,7 @@ func SelectPlan(ref string) (PlanRecord, error) {
 	}
 
 	// Close connection to DB
-	CloseDb()
+	CloseDb(dbconn)
 
 	if count != 1 {
 		return planRecord, errors.New(fmt.Sprintf("Expected 1 record. Found %d", count))
@@ -115,7 +114,7 @@ func InsertPlan(planText string) (PlanRecord, error) {
 	var err error
 
 	// Open connection to DB
-	err = OpenDb()
+	dbconn, err := OpenDb()
 	if err != nil {
 		return planRecord, err
 	}
@@ -138,7 +137,7 @@ func InsertPlan(planText string) (PlanRecord, error) {
 	}
 
 	// Close connection to DB
-	CloseDb()
+	CloseDb(dbconn)
 
 	return planRecord, nil
 }
@@ -241,7 +240,7 @@ func GenerateExplain(w http.ResponseWriter, r *http.Request, planRecord PlanReco
 	// Init the explain from string
 	err := explain.InitFromString(planRecord.Plantext, true)
 	if err != nil {
-		fmt.Fprintf(w, "Oops... we had a problem parsing the plan:\n--\n%s\n", err)
+		fmt.Fprintf(w, "<!DOCTYPE html><pre>Oops... we had a problem parsing the plan:\n--\n%s\n\n<a href=\"/\">Back</a></pre>", err)
 		return
 	}
 
@@ -249,7 +248,7 @@ func GenerateExplain(w http.ResponseWriter, r *http.Request, planRecord PlanReco
 	if planRecord.Ref == "" {
 		planRecord, err = InsertPlan(planRecord.Plantext)
 		if err != nil {
-			fmt.Fprintf(w, "Oops... we had a problem saving the plan:\n--\n%s\n", err)
+			fmt.Fprintf(w, "<!DOCTYPE html><pre>Oops... we had a problem saving the plan:\n--\n%s\n\n<a href=\"/\">Back</a></pre>", err)
 			return
 		}
 	}
