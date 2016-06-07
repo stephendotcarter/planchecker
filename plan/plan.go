@@ -81,6 +81,7 @@ type Warning struct {
 type NodeCheck struct {
 	Name        string
 	Description string
+	CreatedAt   string
 	Scope       []string
 	Exec        func(*Node)
 }
@@ -88,6 +89,7 @@ type NodeCheck struct {
 type ExplainCheck struct {
 	Name        string
 	Description string
+	CreatedAt   string
 	Scope       []string
 	Exec        func(*Explain)
 }
@@ -160,6 +162,7 @@ var (
 		NodeCheck{
 			"checkNodeEstimatedRows",
 			"Scan node with estimated rows equal to 1",
+			"2016-05-24",
 			[]string{"legacy", "orca"},
 			func (n *Node) {
 				re := regexp.MustCompile(`(Dynamic Table|Table|Parquet table|Bitmap Index|Bitmap Append-Only Row-Oriented|Seq) Scan`)
@@ -192,6 +195,7 @@ var (
 		NodeCheck{
 			"checkNodeNestedLoop",
 			"Nested Loops",
+			"2016-05-23",
 			[]string{"legacy", "orca"},
 			func (n *Node) {
 				re := regexp.MustCompile(`Nested Loop`)
@@ -204,6 +208,7 @@ var (
 		NodeCheck{
 			"checkNodeSpilling",
 			"Spill files",
+			"2016-05-31",
 			[]string{"legacy", "orca"},
 			func (n *Node) {
 				if n.SpillFile >= 1 {
@@ -215,6 +220,7 @@ var (
 		NodeCheck{
 			"checkNodeScans",
 			"Node looping multiple times",
+			"2016-05-31",
 			[]string{"legacy", "orca"},
 			func (n *Node) {
 				if n.Scans > 1 {
@@ -226,6 +232,7 @@ var (
 		NodeCheck{
 			"checkNodePartitionScans",
 			"Number of partition scans greater than 100 or 25%%",
+			"2016-05-31",
 			[]string{"legacy", "orca"},
 			func (n *Node) {
 				partitionThreshold := int64(100)
@@ -269,6 +276,7 @@ var (
 		NodeCheck{
 			"checkNodeDataSkew",
 			"Data skew",
+			"2016-06-02",
 			[]string{"legacy", "orca"},
 			func (n *Node) {
 				threshold := 10000.0
@@ -299,6 +307,7 @@ var (
 		NodeCheck{
 			"checkNodeFilterWithFunction",
 			"Filter clause using function",
+			"2016-06-06",
 			[]string{"legacy", "orca"},
 			// Example:
 			//     upper(brief_status::text) = ANY ('{SIGNED,BRIEF,PROPO}'::text[])
@@ -321,6 +330,7 @@ var (
 		ExplainCheck{
 			"checkExplainMotionCount",
 			"Number of Broadcast/Redistribute Motion nodes greater than 5",
+			"2016-05-23",
 			[]string{"legacy", "orca"},
 			func (e *Explain) {
 				motionCount := 0
@@ -343,6 +353,7 @@ var (
 		ExplainCheck{
 			"checkExplainSliceCount",
 			"Number of slices greater than 100",
+			"2016-05-31",
 			[]string{"legacy", "orca"},
 			func (e *Explain) {
 				sliceCount := 0
@@ -363,6 +374,7 @@ var (
 		ExplainCheck{
 			"checkExplainPlannerFallback",
 			"ORCA fallback to legacy query planner",
+			"2016-05-31",
 			[]string{"legacy", "orca"},
 			func (e *Explain) {
 				// Settings:  optimizer=on
@@ -383,6 +395,7 @@ var (
 		ExplainCheck{
 			"checkExplainEnableGucNonDefault",
 			"\"enable_\" GUCs configured with non-default values",
+			"2016-06-06",
 			[]string{"legacy", "orca"},
 			func (e *Explain) {
 				// Default GUC values.
