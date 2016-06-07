@@ -198,13 +198,14 @@ func PlanRefHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	GenerateExplain(w, r, planRecord)
+	GenerateExplain(w, r, planRecord, false)
 }
 
 func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var planText string
 	var planRecord PlanRecord
+	var store bool
 
 	// Attempt to read the uploaded file
 	r.ParseMultipartForm(32 << 20)
@@ -227,15 +228,24 @@ func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
 		planText = r.FormValue("plantext")
 	}
 
+	// Check if user wants to remember the plan
+	storeCheckbox := r.FormValue("store")
+	if storeCheckbox == "on" {
+		store = true
+	} else {
+		store = false
+	}
+
 	planRecord.Plantext = planText
 
-	GenerateExplain(w, r, planRecord)
+	GenerateExplain(w, r, planRecord, store)
 }
 
-func GenerateExplain(w http.ResponseWriter, r *http.Request, planRecord PlanRecord) {
+func GenerateExplain(w http.ResponseWriter, r *http.Request, planRecord PlanRecord, store bool) {
 
 	// Create new explain object
 	var explain plan.Explain
+	var saveNotif string
 
 	// Init the explain from string
 	err := explain.InitFromString(planRecord.Plantext, true)
@@ -245,12 +255,18 @@ func GenerateExplain(w http.ResponseWriter, r *http.Request, planRecord PlanReco
 	}
 
 	// Save the plan if parsing was successful and the plan is not already saved
-	if planRecord.Ref == "" {
+	if planRecord.Ref == "" && store == true {
 		planRecord, err = InsertPlan(planRecord.Plantext)
 		if err != nil {
 			fmt.Fprintf(w, "<!DOCTYPE html><pre>Oops... we had a problem saving the plan:\n--\n%s\n\n<a href=\"/\">Back</a></pre>", err)
 			return
 		}
+		
+		// Generate full plan URL
+		refUrl := fmt.Sprintf("http://%s/plan/%s", r.Host, planRecord.Ref)
+
+		// Prompt user to save the URL
+		saveNotif = fmt.Sprintf("<div class=\"alert alert-info\" style=\"margin-top:20px;\" role=\"alert\">Bookmark this URL if you want to access the results again: <strong>%s</strong></div>", refUrl)
 	}
 
 	// Generate the plan HTML
@@ -259,15 +275,6 @@ func GenerateExplain(w http.ResponseWriter, r *http.Request, planRecord PlanReco
 
 	// Load HTML page
 	pageHtml := LoadHtml("templates/plan.html")
-
-	// Generate full plan URL
-	refUrl := fmt.Sprintf("http://%s/plan/%s", r.Host, planRecord.Ref)
-
-	// If this is a newly submitted plan, disply notification about saving the URL
-	saveNotif := ""
-	if planRecord.Id == 0 {
-		saveNotif = fmt.Sprintf("<div class=\"alert alert-info\" style=\"margin-top:20px;\" role=\"alert\">Bookmark this URL if you want to access the results again: <strong>%s</strong></div>", refUrl)
-	}
 
 	// Render with the plan HTML
 	fmt.Fprintf(w, pageHtml, planHtml, planRecord.Ref, saveNotif)
