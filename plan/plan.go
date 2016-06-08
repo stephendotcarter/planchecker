@@ -431,7 +431,7 @@ var (
 			}},
 		ExplainCheck{
 			"checkExplainOrcaChildPartitionScan",
-			"Scan child partition instead of root partition",
+			"Scan on child partition instead of root partition",
 			"2016-06-08",
 			[]string{"orca"},
 			func (e *Explain) {
