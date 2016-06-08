@@ -30,3 +30,12 @@ hr.small {
 .tooltip-inner {
     white-space:pre-wrap;
 }
+.nowrap{
+    white-space:nowrap;
+}
+.optimizer-orca{
+    background-color: #8dc63f;
+}
+.optimizer-legacy{
+    background-color: #326690;
+}
