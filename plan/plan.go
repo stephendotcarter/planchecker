@@ -163,7 +163,7 @@ var (
 			"checkNodeEstimatedRows",
 			"Scan node with estimated rows equal to 1",
 			"2016-05-24",
-			[]string{"legacy", "orca"},
+			[]string{"orca", "legacy"},
 			func (n *Node) {
 				re := regexp.MustCompile(`(Dynamic Table|Table|Parquet table|Bitmap Index|Bitmap Append-Only Row-Oriented|Seq) Scan`)
 				if re.MatchString(n.Operator) {
@@ -196,7 +196,7 @@ var (
 			"checkNodeNestedLoop",
 			"Nested Loops",
 			"2016-05-23",
-			[]string{"legacy", "orca"},
+			[]string{"orca", "legacy"},
 			func (n *Node) {
 				re := regexp.MustCompile(`Nested Loop`)
 				if re.MatchString(n.Operator) {
@@ -209,7 +209,7 @@ var (
 			"checkNodeSpilling",
 			"Spill files",
 			"2016-05-31",
-			[]string{"legacy", "orca"},
+			[]string{"orca", "legacy"},
 			func (n *Node) {
 				if n.SpillFile >= 1 {
 					n.Warnings = append(n.Warnings, Warning{
@@ -221,7 +221,7 @@ var (
 			"checkNodeScans",
 			"Node looping multiple times",
 			"2016-05-31",
-			[]string{"legacy", "orca"},
+			[]string{"orca", "legacy"},
 			func (n *Node) {
 				if n.Scans > 1 {
 					n.Warnings = append(n.Warnings, Warning{
@@ -233,7 +233,7 @@ var (
 			"checkNodePartitionScans",
 			"Number of partition scans greater than 100 or 25%%",
 			"2016-05-31",
-			[]string{"legacy", "orca"},
+			[]string{"orca", "legacy"},
 			func (n *Node) {
 				partitionThreshold := int64(100)
 				partitionPrctThreshold := int64(25)
@@ -277,7 +277,7 @@ var (
 			"checkNodeDataSkew",
 			"Data skew",
 			"2016-06-02",
-			[]string{"legacy", "orca"},
+			[]string{"orca", "legacy"},
 			func (n *Node) {
 				threshold := 10000.0
 
@@ -308,7 +308,7 @@ var (
 			"checkNodeFilterWithFunction",
 			"Filter clause using function",
 			"2016-06-06",
-			[]string{"legacy", "orca"},
+			[]string{"orca", "legacy"},
 			// Example:
 			//     upper(brief_status::text) = ANY ('{SIGNED,BRIEF,PROPO}'::text[])
 			//
@@ -331,7 +331,7 @@ var (
 			"checkExplainMotionCount",
 			"Number of Broadcast/Redistribute Motion nodes greater than 5",
 			"2016-05-23",
-			[]string{"legacy", "orca"},
+			[]string{"orca", "legacy"},
 			func (e *Explain) {
 				motionCount := 0
 				motionCountLimit := 5
@@ -354,7 +354,7 @@ var (
 			"checkExplainSliceCount",
 			"Number of slices greater than 100",
 			"2016-05-31",
-			[]string{"legacy", "orca"},
+			[]string{"orca", "legacy"},
 			func (e *Explain) {
 				sliceCount := 0
 				sliceCountLimit := 100
@@ -396,7 +396,7 @@ var (
 			"checkExplainEnableGucNonDefault",
 			"\"enable_\" GUCs configured with non-default values",
 			"2016-06-06",
-			[]string{"legacy", "orca"},
+			[]string{"orca", "legacy"},
 			func (e *Explain) {
 				// Default GUC values.
 				// http://gpdb.docs.pivotal.io/4340/guc_config-topic3.html
