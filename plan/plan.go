@@ -429,6 +429,30 @@ var (
 					}
 				}
 			}},
+		ExplainCheck{
+			"checkExplainOrcaChildPartitionScan",
+			"Scan child partition instead of root partition",
+			"2016-06-08",
+			[]string{"orca"},
+			func (e *Explain) {
+				// Skip if using legacy
+				if e.Optimizer == "legacy query optimizer" {
+					return
+				}
+
+				// ->  Seq Scan on sales_1_prt_outlying_years s  (cost=0.00..55276.72 rows=2476236 width=8)
+				// ->  Seq Scan on sales_1_prt_2 s  (cost=0.00..38.44 rows=1722 width=8)
+				re := regexp.MustCompile(`_[0-9]+_prt_`)
+
+				for _, n := range e.Nodes {
+					// Check if object name looks like partition
+					if re.MatchString(n.Operator) {
+						n.Warnings = append(n.Warnings, Warning{
+							fmt.Sprintf("Scan on what appears to be a child partition"),
+							fmt.Sprintf("Recommend using root partition when ORCA is enabled")})
+					}
+				}
+			}},
 	}
 
 	indentDepth  = 4  // Used for printing the plan
