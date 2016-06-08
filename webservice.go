@@ -240,7 +240,7 @@ func InsertPlan(planText string) (PlanRecord, error) {
 func GenerateChecklistHtml() string {
 	checks := ""
 	checks += "<table class=\"table table-bordered table-condensed table-striped\">\n"
-	checks += "<tr><th class=\"text-left\">Description</th><th class=\"text-left\">Scope</th><th class=\"text-left\">Added</th></tr>"
+	checks += "<tr><th class=\"text-left\">Description</th><th class=\"text-left\">Optimizer</th><th class=\"text-left\">Added</th></tr>"
 	for _, c := range plan.NODECHECKS {
 		scope := ""
 		for _, s := range c.Scope {
