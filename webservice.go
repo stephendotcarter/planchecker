@@ -238,34 +238,25 @@ func InsertPlan(planText string) (PlanRecord, error) {
 }
 
 func GenerateChecklistHtml() string {
-    checks := ""
-    checks += "<table class=\"table table-bordered table-condensed table-striped\">\n"
-    //checks += "<tr><th colspan=\"2\">Node Checks</th></tr>\n"
-    checks += "<tr><th class=\"text-left\">Description</th><th class=\"text-left\">Added</th></tr>"
-    for _, c := range plan.NODECHECKS {
-        //checks += fmt.Sprintf("<tr><td>%s</td><td>", c.Description)
-        checks += fmt.Sprintf("<tr><td>%s</td><td>%s</td></tr>", c.Description, c.CreatedAt)
-        //checks += fmt.Sprintf("<li>%s</li>", c.Description)
-        //for _, s := range c.Scope {
-        //  checks += fmt.Sprintf("<span class=\"label label-primary\">%s</span> ", s)
-        //}
-        //checks += fmt.Sprintf("</td></tr>\n")
-    }
-    //checks += "<tr><th colspan=\"2\">Explain</th></tr>\n"
-    //checks += "<tr><th class=\"text-left\">Description</th><th class=\"text-left\">Scope</th></tr>"
-    for _, c := range plan.EXPLAINCHECKS {
-        //checks += fmt.Sprintf("<tr><td>%s</td><td>", c.Description)
-        //checks += fmt.Sprintf("<tr><td>%s</td></tr>", c.Description)
-        //checks += fmt.Sprintf("<li>%s</li>", c.Description)
-        checks += fmt.Sprintf("<tr><td>%s</td><td>%s</td></tr>", c.Description, c.CreatedAt)
-        //for _, s := range c.Scope {
-        //  checks += fmt.Sprintf("<span class=\"label label-primary\">%s</span> ", s)
-        //}
-        //checks += fmt.Sprintf("</td></tr>\n")
-    }
-    checks += "</table>\n"
-    //checks += "</ul>\n"
-    return checks
+	checks := ""
+	checks += "<table class=\"table table-bordered table-condensed table-striped\">\n"
+	checks += "<tr><th class=\"text-left\">Description</th><th class=\"text-left\">Scope</th><th class=\"text-left\">Added</th></tr>"
+	for _, c := range plan.NODECHECKS {
+		scope := ""
+		for _, s := range c.Scope {
+		  scope += fmt.Sprintf(" <span class=\"label optimizer-%[1]s\">%[1]s</span> ", s)
+		}
+		checks += fmt.Sprintf("<tr><td>%s</td><td class=\"nowrap\">%s</td><td class=\"nowrap\">%s</td></tr>", c.Description, scope, c.CreatedAt)
+	}
+	for _, c := range plan.EXPLAINCHECKS {
+		scope := ""
+		for _, s := range c.Scope {
+		  scope += fmt.Sprintf(" <span class=\"label optimizer-%[1]s\">%[1]s</span> ", s)
+		}
+		checks += fmt.Sprintf("<tr><td>%s</td><td class=\"nowrap\">%s</td><td class=\"nowrap\">%s</td></tr>", c.Description, scope, c.CreatedAt)
+	}
+	checks += "</table>\n"
+	return checks
 }
 
 
