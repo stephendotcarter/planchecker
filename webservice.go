@@ -513,7 +513,7 @@ func RenderExplainHtml(e *plan.Explain) string {
 		"<th class=\"text-right\">Total</th>" +
 		"<th class=\"text-right\">Rows</th>"
 	if e.Plans[0].TopNode.IsAnalyzed == true {
-		HTMLTH1 += "<th colspan=\"6\" class=\"text-center\">Row Stats</th>"
+		HTMLTH1 += "<th colspan=\"5\" class=\"text-center\">Row Stats</th>"
 		HTMLTH2 += "<th class=\"text-right\">Actual</th>" +
 			"<th class=\"text-right\">Avg</th>" +
 			"<th class=\"text-right\">Max</th>" +
