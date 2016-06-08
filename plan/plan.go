@@ -375,7 +375,7 @@ var (
 			"checkExplainPlannerFallback",
 			"ORCA fallback to legacy query planner",
 			"2016-05-31",
-			[]string{"legacy", "orca"},
+			[]string{"orca"},
 			func (e *Explain) {
 				// Settings:  optimizer=on
 				// Optimizer status: legacy query optimizer
