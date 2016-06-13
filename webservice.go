@@ -36,98 +36,7 @@ var (
 	dbconnstring string
 
 	// Display this when running on dev instance
-	testPlan = `
-
-																							 QUERY PLAN                                                                                              
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- Gather Motion 64:1  (slice12; segments: 64)  (cost=665851.67..41163590.78 rows=142 width=1073)
-   ->  Nested Loop  (cost=665851.67..41163590.78 rows=3 width=1073)
-		 ->  Hash Join  (cost=665577.99..794823.68 rows=1 width=1073)
-			   Hash Cond: pa.org_id = hou.organization_id
-			   ->  Redistribute Motion 64:64  (slice7; segments: 64)  (cost=665374.26..794619.62 rows=1 width=582)
-					 Hash Key: pa.org_id
-					 ->  Hash Join  (cost=665374.26..794619.18 rows=1 width=582)
-						   Hash Cond: pat.carrying_out_organization_id = haou.warehouse_id
-						   ->  Redistribute Motion 64:64  (slice6; segments: 64)  (cost=665170.54..794415.12 rows=1 width=91)
-								 Hash Key: pat.carrying_out_organization_id
-								 ->  Hash Join  (cost=665170.54..794414.68 rows=1 width=91)
-									   Hash Cond: pdr.gl_date = ddim.date_value
-									   ->  Redistribute Motion 64:64  (slice4; segments: 64)  (cost=664705.04..793948.84 rows=1 width=67)
-											 Hash Key: pdr.gl_date
-											 ->  Hash Join  (cost=664705.04..793948.40 rows=1 width=67)
-												   Hash Cond: pat.project_id = pei.project_id AND pat.task_id = pei.task_id
-												   ->  Seq Scan on pa_tasks pat  (cost=0.00..104639.42 rows=76887 width=23)
-												   ->  Hash  (cost=663813.65..663813.65 rows=929 width=84)
-														 ->  Redistribute Motion 64:64  (slice3; segments: 64)  (cost=13124.68..663813.65 rows=929 width=84)
-															   Hash Key: pei.task_id
-															   ->  Hash Join  (cost=13124.68..662625.12 rows=929 width=84)
-																	 Hash Cond: pei.project_id = pa.project_id AND pei.attribute7::text = pdr.draft_revenue_num::text
-																	 ->  Redistribute Motion 64:64  (slice2; segments: 64)  (cost=0.00..584786.26 rows=199950 width=42)
-																		   Hash Key: pei.project_id
-																		   ->  Seq Scan on pa_expenditure_items_all pei  (cost=0.00..328851.42 rows=199950 width=42)
-																	 ->  Hash  (cost=10432.66..10432.66 rows=2805 width=51)
-																		   ->  Hash Join  (cost=3327.55..10432.66 rows=2805 width=51)
-																				 Hash Cond: pdr.project_id = pa.project_id
-																				 ->  Seq Scan on pa_draft_revenues_all pdr  (cost=0.00..4413.09 rows=2805 width=23)
-																					   Filter: transfer_status_code::text = 'A'::text
-																				 ->  Hash  (cost=2391.69..2391.69 rows=1170 width=28)
-																					   ->  Seq Scan on pa_projects_all pa  (cost=0.00..2391.69 rows=1170 width=28)
-									   ->  Hash  (cost=457.50..457.50 rows=10 width=40)
-											 ->  Redistribute Motion 1:64  (slice5)  (cost=0.00..457.50 rows=640 width=40)
-												   Hash Key: ddim.date_value
-												   ->  Function Scan on generate_series t  (cost=0.00..41.50 rows=640 width=8)
-														 Filter: ts >= '2016-04-08 08:58:00.482988-04'::timestamp with time zone AND ts <= '2016-04-08 08:58:00.482988-04'::timestamp with time zone
-						   ->  Hash  (cost=197.90..197.90 rows=8 width=514)
-								 ->  Hash Join  (cost=74.48..197.90 rows=8 width=25)
-									   Hash Cond: haotl.organization_id = hao.organization_id
-									   ->  Seq Scan on hr_all_organization_units_tl haotl  (cost=0.00..116.43 rows=8 width=25)
-											 Filter: language::text = 'US'::text
-									   ->  Hash  (cost=68.66..68.66 rows=8 width=6)
-											 ->  Seq Scan on hr_all_organization_units hao  (cost=0.00..68.66 rows=8 width=6)
-			   ->  Hash  (cost=197.90..197.90 rows=8 width=514)
-					 ->  Hash Join  (cost=74.48..197.90 rows=8 width=25)
-						   Hash Cond: otl.organization_id = o.organization_id
-						   ->  Seq Scan on hr_all_organization_units_tl otl  (cost=0.00..116.43 rows=8 width=25)
-								 Filter: language::text = 'US'::text
-						   ->  Hash  (cost=68.66..68.66 rows=8 width=6)
-								 ->  Seq Scan on hr_all_organization_units o  (cost=0.00..68.66 rows=8 width=6)
-		 ->  Materialize  (cost=273.69..273.70 rows=7 width=0)
-			   ->  Broadcast Motion 1:64  (slice11; segments: 1)  (cost=273.67..273.69 rows=1 width=0)
-					 ->  Limit  (cost=273.67..273.67 rows=1 width=0)
-						   ->  Gather Motion 64:1  (slice10; segments: 64)  (cost=273.67..273.69 rows=1 width=0)
-								 ->  Limit  (cost=273.67..273.67 rows=1 width=0)
-									   ->  Hash Join  (cost=273.67..544.46 rows=1 width=0)
-											 Hash Cond: psvlr.segment_value_lookup::text = ou.organization_name::text
-											 ->  Redistribute Motion 64:64  (slice8; segments: 64)  (cost=65.16..335.68 rows=2 width=516)
-												   Hash Key: psvlr.segment_value_lookup::text
-												   ->  Hash Join  (cost=65.16..334.05 rows=2 width=97)
-														 Hash Cond: l.segment_value_lookup_set_id = ls.segment_value_lookup_set_id
-														 ->  Seq Scan on pa_segment_value_lookups l  (cost=0.00..232.69 rows=220 width=33)
-														 ->  Hash  (cost=65.15..65.15 rows=1 width=71)
-															   ->  Seq Scan on pa_segment_value_lookup_sets ls  (cost=0.00..65.15 rows=1 width=71)
-																	 Filter: segment_value_lookup_set_name::text = 'SERVICES OPERATING UNITS'::text
-											 ->  Hash  (cost=208.46..208.46 rows=1 width=498)
-												   ->  Redistribute Motion 64:64  (slice9; segments: 64)  (cost=0.00..208.46 rows=1 width=498)
-														 Hash Key: ou.organization_name::text
-														 ->  Nested Loop  (cost=0.00..208.39 rows=1 width=25)
-															   ->  Seq Scan on hr_all_organization_units o  (cost=0.00..70.99 rows=1 width=6)
-																	 Filter: organization_id = $3 AND $3 = organization_id
-															   ->  Seq Scan on hr_all_organization_units_tl otl  (cost=0.00..137.40 rows=1 width=25)
-																	 Filter: language::text = 'US'::text AND $3 = organization_id AND organization_id = $3
-		 SubPlan 1
-		   ->  Result  (cost=285790.96..285791.24 rows=1 width=15)
-				 Filter: conv.conversion_date = date_trunc('DAY'::text, $0) AND conv.to_currency::text = $1::text AND conv.conversion_type::text = $2::text
-				 ->  Materialize  (cost=285790.96..285791.24 rows=1 width=15)
-					   ->  Broadcast Motion 64:64  (slice1; segments: 64)  (cost=0.00..285790.93 rows=1 width=15)
-							 ->  Seq Scan on gl_daily_rates conv  (cost=0.00..285790.93 rows=1 width=15)
-								   Filter: from_currency::text = 'USD'::text
- Settings:  enable_groupagg=off; join_collapse_limit=20; optimizer=off
- Optimizer status: legacy query optimizer
-(10792 rows)
-
-Time: 36.880 ms
-			";
-			`
+	testPlan string
 )
 
 // Generate random string
@@ -596,6 +505,23 @@ func main() {
 		os.Exit(0)
 	}
 	fmt.Printf("Database %s\n", dbconnstring)
+
+	// Read testdata in to memory
+	testPlanFilename := "testdata/explain16.txt"
+	if _, err := os.Stat(testPlanFilename); os.IsNotExist(err) {
+		fmt.Printf("Could not find \"%s\"\n", testPlanFilename)
+		os.Exit(0)
+	}
+
+	// Read all lines
+	filedata, err := ioutil.ReadFile(testPlanFilename)
+	if err != nil {
+		fmt.Printf("Could not load \"%s\"\n", testPlanFilename)
+		os.Exit(0)
+	}
+
+	testPlan = string(filedata)
+
 
 	// Using gorilla/mux as it provides named URL variable parsing
 	r := mux.NewRouter()
