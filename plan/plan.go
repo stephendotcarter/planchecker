@@ -133,7 +133,7 @@ var (
 	log mlogger.Mlogger
 
 	patterns = map[string]*regexp.Regexp{
-		"NODE":    regexp.MustCompile(`(.*) \(cost=(.*)\.\.(.*) rows=(.*) width=(.*)\)`),
+		"NODE":    regexp.MustCompile(`(.*) \((cost=(.*)\.\.(.*) ){0,1}rows=(.*) width=(.*)\)`),
 		"SLICE":   regexp.MustCompile(`(.*)  \(slice([0-9]*)`),
 		"SUBPLAN": regexp.MustCompile(` SubPlan `),
 
@@ -482,7 +482,7 @@ func parseNodeExtraInfo(n *Node) error {
 	n.Object = ""
 	n.ObjectType = ""
 
-	if len(groups) == 6 {
+	if len(groups) == 7 {
 		// Remove the indent arrow
 		groups[1] = strings.Trim(groups[1], " ->")
 
@@ -515,10 +515,10 @@ func parseNodeExtraInfo(n *Node) error {
 		}
 
 		// Store the remaining params
-		n.StartupCost, _ = strconv.ParseFloat(strings.TrimSpace(groups[2]), 64)
-		n.TotalCost, _ = strconv.ParseFloat(strings.TrimSpace(groups[3]), 64)
-		n.Rows, _ = strconv.ParseInt(strings.TrimSpace(groups[4]), 10, 64)
-		n.Width, _ = strconv.ParseInt(strings.TrimSpace(groups[5]), 10, 64)
+		n.StartupCost, _ = strconv.ParseFloat(strings.TrimSpace(groups[3]), 64)
+		n.TotalCost, _ = strconv.ParseFloat(strings.TrimSpace(groups[4]), 64)
+		n.Rows, _ = strconv.ParseInt(strings.TrimSpace(groups[5]), 10, 64)
+		n.Width, _ = strconv.ParseInt(strings.TrimSpace(groups[6]), 10, 64)
 
 	} else {
 		return errors.New("Unable to parse node")
@@ -1203,6 +1203,21 @@ func (e *Explain) InitPlan(plantext string) error {
 		err := parseNodeExtraInfo(n)
 		if err != nil {
 			return err
+		}
+	}
+
+	// If first node is an INSERT node then it will not have any startup or total cost
+	// template1=# explain insert INTO tbl1 select * from tbl1 ;
+	//     Insert (slice0; segments: 4)  (rows=13200 width=32)
+	//       ->  Seq Scan on tbl1  (cost=0.00..628.00 rows=13200 width=32)
+	// So copy stats from the first child to make calculations work as expected
+	if e.Nodes[0].TotalCost == 0 {
+		if len(e.Nodes) >= 2 {
+			e.Nodes[0].TotalCost = e.Nodes[1].TotalCost
+			e.Nodes[0].StartupCost = e.Nodes[1].StartupCost
+			e.Nodes[0].MsEnd = e.Nodes[1].MsEnd
+			e.Nodes[0].MsOffset = e.Nodes[1].MsOffset
+			e.Nodes[0].IsAnalyzed = e.Nodes[1].IsAnalyzed
 		}
 	}
 
