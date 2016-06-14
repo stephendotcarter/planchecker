@@ -474,9 +474,9 @@ func RenderExplainHtml(e *plan.Explain) string {
 		}
 	}
 
-	if e.Optimizer != "" {
+	if e.OptimizerStatus != "" {
 		HTML += fmt.Sprintf("<strong>Optimizer status:</strong>\n")
-		HTML += fmt.Sprintf("\t%s\n", e.Optimizer)
+		HTML += fmt.Sprintf("\t%s\n", e.OptimizerStatus)
 	}
 
 	if e.Runtime > 0 {

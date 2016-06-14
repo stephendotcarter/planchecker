@@ -119,6 +119,7 @@ type Explain struct {
 	MemoryWanted int64
 	Settings     []Setting
 	Optimizer    string
+	OptimizerStatus string
 	Runtime      float64
 
 	// Populated with any warning for the overall EXPLAIN output
@@ -381,7 +382,7 @@ var (
 				// Optimizer status: legacy query optimizer
 				re := regexp.MustCompile(`legacy query optimizer`)
 
-				if re.MatchString(e.Optimizer) {
+				if re.MatchString(e.OptimizerStatus) {
 					for _, s := range e.Settings {
 						if s.Name == "optimizer" && s.Value == "on" {
 							e.Warnings = append(e.Warnings, Warning{
@@ -435,8 +436,9 @@ var (
 			"2016-06-08",
 			[]string{"orca"},
 			func (e *Explain) {
+
 				// Skip if using legacy
-				if e.Optimizer == "legacy query optimizer" {
+				if e.Optimizer != "on" {
 					return
 				}
 
@@ -780,6 +782,11 @@ func (e *Explain) parseSettings(line string) {
 		temp := strings.Split(setting, "=")
 		e.Settings = append(e.Settings, Setting{temp[0], temp[1]})
 		log.Debugf("\t%s\n", setting)
+
+		// Store actual status of optimizer
+		if temp[0] == "optimizer" {
+			e.Optimizer = temp[1]
+		}
 	}
 }
 
@@ -842,8 +849,8 @@ func (e *Explain) parseOptimizer(line string) {
 	line = strings.TrimSpace(line)
 	line = line[11:]
 	temp := strings.Split(line, ": ")
-	e.Optimizer = temp[1]
-	log.Debugf("\t%s\n", e.Optimizer)
+	e.OptimizerStatus = temp[1]
+	log.Debugf("\t%s\n", e.OptimizerStatus)
 }
 
 // ------------------------------------------------------------
@@ -1151,9 +1158,9 @@ func (e *Explain) PrintPlan() {
 		}
 	}
 
-	if e.Optimizer != "" {
+	if e.OptimizerStatus != "" {
 		fmt.Println("Optimizer status:")
-		fmt.Printf("\t%s\n", e.Optimizer)
+		fmt.Printf("\t%s\n", e.OptimizerStatus)
 	}
 
 	if e.Runtime > 0 {
