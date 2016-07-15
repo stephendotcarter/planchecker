@@ -3,12 +3,13 @@ package plan
 import (
 	"errors"
 	"fmt"
-	"github.com/pivotal-gss/utils/mlogger"
 	"io/ioutil"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/pivotal-gss/utils/mlogger"
 )
 
 // Represents a node (anything indented with "->" in the plan)
@@ -112,15 +113,15 @@ type Setting struct {
 
 // Top level object
 type Explain struct {
-	Nodes        []*Node // All nodes get added here
-	Plans        []*Plan // All plans get added here
-	SliceStats   []string
-	MemoryUsed   int64
-	MemoryWanted int64
-	Settings     []Setting
-	Optimizer    string
+	Nodes           []*Node // All nodes get added here
+	Plans           []*Plan // All plans get added here
+	SliceStats      []string
+	MemoryUsed      int64
+	MemoryWanted    int64
+	Settings        []Setting
+	Optimizer       string
 	OptimizerStatus string
-	Runtime      float64
+	Runtime         float64
 
 	// Populated with any warning for the overall EXPLAIN output
 	Warnings []Warning
@@ -155,7 +156,7 @@ var (
 
 	// Keep all checks in NODECHEKS and EXPLAINCHECKS so that we can
 	// dynamically create a list of checks to display in webapp
-	
+
 	// ------------------------------------------------------------
 	// Checks relating to each node
 	// ------------------------------------------------------------
@@ -165,7 +166,7 @@ var (
 			"Scan node with estimated rows equal to 1",
 			"2016-05-24",
 			[]string{"orca", "legacy"},
-			func (n *Node) {
+			func(n *Node) {
 				re := regexp.MustCompile(`(Dynamic Table|Table|Parquet table|Bitmap Index|Bitmap Append-Only Row-Oriented|Seq) Scan`)
 				if re.MatchString(n.Operator) {
 					if n.Rows == 1 {
@@ -198,7 +199,7 @@ var (
 			"Nested Loops",
 			"2016-05-23",
 			[]string{"orca", "legacy"},
-			func (n *Node) {
+			func(n *Node) {
 				re := regexp.MustCompile(`Nested Loop`)
 				if re.MatchString(n.Operator) {
 					n.Warnings = append(n.Warnings, Warning{
@@ -211,7 +212,7 @@ var (
 			"Spill files",
 			"2016-05-31",
 			[]string{"orca", "legacy"},
-			func (n *Node) {
+			func(n *Node) {
 				if n.SpillFile >= 1 {
 					n.Warnings = append(n.Warnings, Warning{
 						fmt.Sprintf("Total %d spilling segments found", n.SpillFile),
@@ -223,7 +224,7 @@ var (
 			"Node looping multiple times",
 			"2016-05-31",
 			[]string{"orca", "legacy"},
-			func (n *Node) {
+			func(n *Node) {
 				if n.Scans > 1 {
 					n.Warnings = append(n.Warnings, Warning{
 						fmt.Sprintf("This node is executed %d times", n.Scans),
@@ -235,7 +236,7 @@ var (
 			"Number of partition scans greater than 100 or 25%%",
 			"2016-05-31",
 			[]string{"orca", "legacy"},
-			func (n *Node) {
+			func(n *Node) {
 				partitionThreshold := int64(100)
 				partitionPrctThreshold := int64(25)
 
@@ -279,7 +280,7 @@ var (
 			"Data skew",
 			"2016-06-02",
 			[]string{"orca", "legacy"},
-			func (n *Node) {
+			func(n *Node) {
 				threshold := 10000.0
 
 				// Only proceed if over threshold
@@ -313,7 +314,7 @@ var (
 			// Example:
 			//     upper(brief_status::text) = ANY ('{SIGNED,BRIEF,PROPO}'::text[])
 			//
-			func (n *Node) {
+			func(n *Node) {
 				re := regexp.MustCompile(`\S+\(.*\) `)
 
 				if re.MatchString(n.Filter) {
@@ -333,7 +334,7 @@ var (
 			"Number of Broadcast/Redistribute Motion nodes greater than 5",
 			"2016-05-23",
 			[]string{"orca", "legacy"},
-			func (e *Explain) {
+			func(e *Explain) {
 				motionCount := 0
 				motionCountLimit := 5
 
@@ -356,7 +357,7 @@ var (
 			"Number of slices greater than 100",
 			"2016-05-31",
 			[]string{"orca", "legacy"},
-			func (e *Explain) {
+			func(e *Explain) {
 				sliceCount := 0
 				sliceCountLimit := 100
 
@@ -377,7 +378,7 @@ var (
 			"ORCA fallback to legacy query planner",
 			"2016-05-31",
 			[]string{"orca"},
-			func (e *Explain) {
+			func(e *Explain) {
 				// Settings:  optimizer=on
 				// Optimizer status: legacy query optimizer
 				re := regexp.MustCompile(`legacy query optimizer`)
@@ -398,20 +399,20 @@ var (
 			"\"enable_\" GUCs configured with non-default values",
 			"2016-06-06",
 			[]string{"orca", "legacy"},
-			func (e *Explain) {
+			func(e *Explain) {
 				// Default GUC values.
 				// http://gpdb.docs.pivotal.io/4340/guc_config-topic3.html
 				defaults := map[string]string{
 					"enable_bitmapscan": "on",
-					"enable_groupagg": "on",
-					"enable_hashagg": "on",
-					"enable_hashjoin": "on",
-					"enable_indexscan": "on",
-					"enable_seqscan": "on",
-					"enable_sort": "on",
-					"enable_tidscan": "on",
-					"enable_nestloop": "off",
-					"enable_mergejoin": "off",
+					"enable_groupagg":   "on",
+					"enable_hashagg":    "on",
+					"enable_hashjoin":   "on",
+					"enable_indexscan":  "on",
+					"enable_seqscan":    "on",
+					"enable_sort":       "on",
+					"enable_tidscan":    "on",
+					"enable_nestloop":   "off",
+					"enable_mergejoin":  "off",
 				}
 
 				// Settings:  enable_hashjoin=off; enable_indexscan=off; join_collapse_limit=1; optimizer=on
@@ -435,7 +436,7 @@ var (
 			"Scan on child partition instead of root partition",
 			"2016-06-08",
 			[]string{"orca"},
-			func (e *Explain) {
+			func(e *Explain) {
 
 				// Skip if using legacy
 				if e.Optimizer != "on" {
@@ -1055,7 +1056,7 @@ func (n *Node) CalculateSubNodeDiff() {
 
 	n.MsNode = n.MsEnd - msChild
 	n.NodeCost = n.TotalCost - costChild
-	
+
 	if n.MsNode < 0 {
 		n.MsNode = 0
 	}
