@@ -890,6 +890,15 @@ func (e *Explain) parseLines() error {
 
 // Parse each line
 func (e *Explain) parseline(line string) error {
+	// Check if line has doublequotes at start and end i.e. it was copied from pgAdmin output
+	if len(line) > 2 {
+		if `"` == line[0:1] && `"` == line[len(line)-2:len(line)-1] {
+			// If so then remove the doublequotes and add an extra space
+			// The space is so the output matches standard psql output
+			line = " " + line[1:len(line)-2]
+		}
+	}
+
 	indent := getIndent(line)
 
 	// Ignore whitespace, "QUERY PLAN" and "-"
