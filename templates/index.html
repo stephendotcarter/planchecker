@@ -43,11 +43,13 @@ output here">%s</textarea>
 
             <p>When a query plan is generated whitespace is used to indent each node. It's important to keep the correct whitespace indentation when submitting the plan to planchecker or else the plan may be parsed incorrectly.</p>
 
-            <p>The following steps are recommended for best results:
+            <p>The following steps are recommended for best results:</p>
+            
+            <h4>Using psql</h4>
             <ol>
                 <li>Create an .sql file containing the query:
                 <pre>$ cat myquery.sql
-EXPLAIN SELECT * FROM mytable
+EXPLAIN ANALYZE SELECT * FROM mytable
 WHERE date = '1955-11-05' AND location = 'Hill Valley';</pre>
                 </li>
                 <li>Execute the query using psql and redirect the output:
@@ -57,9 +59,20 @@ WHERE date = '1955-11-05' AND location = 'Hill Valley';</pre>
                 <code>Choose File</code>, select <code>myquery.sql.out</code>, click <code>Submit</code>
                 </li>
             </ol>
-            </p>
 
-            <p>Alternatively you can <code>Copy/paste</code> the query plan but make sure whitespace formatting is not lost.</p>
+            <h4>Using pgAdmin</h4>
+            <p><em>Note: When using pgAdmin each line of the output will be enclosed in doublequotes.<br>This is the expected format. Please do not modify it.</em></p>
+            <ol>
+                <li>Open <code>pgAdmin</code>.</li>
+                <li>Open <code>SQL Editor</code> screen.</li>
+                <li>Execute the query prefixed with <code>EXPLAIN ANALYZE</code>:
+                <pre>EXPLAIN ANALYZE SELECT * FROM mytable
+WHERE date = '1955-11-05' AND location = 'Hill Valley';</pre>
+                </li>
+                <li>On the <code>Data Output</code> tab click the <code>QUERY PLAN text</code> column header to select all the text.</li>
+                <li>Copy/Paste the selected text in to planchecker and click <code>Submit</code>.</li>
+            </ol>
+            
             <!-- STEPS END -->
         </div>
         <!-- COL END -->
