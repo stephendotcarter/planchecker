@@ -2,19 +2,20 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/pivotal-gss/planchecker/plan"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
-	"strings"
-	_ "github.com/go-sql-driver/mysql"
-	"database/sql"
-	"math/rand"
-	"time"
 	"regexp"
+	"strings"
+	"time"
+
+	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
+	"github.com/pivotal-gss/planchecker/plan"
 )
 
 // Database record
@@ -22,7 +23,7 @@ type PlanRecord struct {
 	Id        int
 	Ref       string
 	Plantext  string
-	CreatedAt string
+	CreatedAt time.Time
 }
 
 var (
@@ -66,8 +67,8 @@ func CloseDb(dbconn *sql.DB) {
 func OpenDb() (*sql.DB, error) {
 	var err error
 
-	dbconn, err := sql.Open("mysql", dbconnstring)
-	
+	dbconn, err := sql.Open("postgres", dbconnstring)
+
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +88,7 @@ func SelectPlan(ref string) (PlanRecord, error) {
 	}
 
 	// Query by ref
-	rows, err := dbconn.Query("SELECT * FROM plans WHERE ref = ?", ref)
+	rows, err := dbconn.Query("SELECT id, ref, plantext, created_at FROM plans WHERE ref = $1", ref)
 	if err != nil {
 		return planRecord, errors.New("Database query failed")
 	}
@@ -129,7 +130,7 @@ func InsertPlan(planText string) (PlanRecord, error) {
 	planRecord.Plantext = planText
 
 	// Prepare the statement
-	stmt, err := dbconn.Prepare("INSERT plans SET ref=?,plantext=?")
+	stmt, err := dbconn.Prepare("INSERT INTO plans(ref,plantext) VALUES($1,$2)")
 	if err != nil {
 		return planRecord, err
 	}
