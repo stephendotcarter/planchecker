@@ -80,7 +80,7 @@ func OpenDb() (*sql.DB, error) {
 func SelectPlan(ref string) (PlanRecord, error) {
 	var planRecord PlanRecord
 	var err error
-	
+
 	// Open connection to DB
 	dbconn, err := OpenDb()
 	if err != nil {
@@ -154,21 +154,20 @@ func GenerateChecklistHtml() string {
 	for _, c := range plan.NODECHECKS {
 		scope := ""
 		for _, s := range c.Scope {
-		  scope += fmt.Sprintf(" <span class=\"label optimizer-%[1]s\">%[1]s</span> ", s)
+			scope += fmt.Sprintf(" <span class=\"label optimizer-%[1]s\">%[1]s</span> ", s)
 		}
 		checks += fmt.Sprintf("<tr><td>%s</td><td class=\"nowrap\">%s</td><td class=\"nowrap\">%s</td></tr>", c.Description, scope, c.CreatedAt)
 	}
 	for _, c := range plan.EXPLAINCHECKS {
 		scope := ""
 		for _, s := range c.Scope {
-		  scope += fmt.Sprintf(" <span class=\"label optimizer-%[1]s\">%[1]s</span> ", s)
+			scope += fmt.Sprintf(" <span class=\"label optimizer-%[1]s\">%[1]s</span> ", s)
 		}
 		checks += fmt.Sprintf("<tr><td>%s</td><td class=\"nowrap\">%s</td><td class=\"nowrap\">%s</td></tr>", c.Description, scope, c.CreatedAt)
 	}
 	checks += "</table>\n"
 	return checks
 }
-
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	// Load HTML
@@ -264,7 +263,7 @@ func GenerateExplain(w http.ResponseWriter, r *http.Request, planRecord PlanReco
 			fmt.Fprintf(w, "<!DOCTYPE html><pre>Oops... we had a problem saving the plan:\n--\n%s\n\n<a href=\"/\">Back</a></pre>", err)
 			return
 		}
-		
+
 		// Generate full plan URL
 		refUrl := fmt.Sprintf("http://%s/plan/%s", r.Host, planRecord.Ref)
 
@@ -332,7 +331,7 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 	if n.IsAnalyzed == true {
 		if n.ActualRows > -1 {
 			HTML += fmt.Sprintf(
-					"<td class=\"text-right\">%.0f</td>"+
+				"<td class=\"text-right\">%.0f</td>"+
 					"<td class=\"text-right\">%s</td>"+
 					"<td class=\"text-right\">%s</td>"+
 					"<td class=\"text-right\">%s</td>"+
@@ -343,7 +342,7 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 				n.MaxSeg,
 				"-")
 			HTML += fmt.Sprintf(
-					"<td class=\"text-right\">%.0f</td>"+
+				"<td class=\"text-right\">%.0f</td>"+
 					"<td class=\"text-right\">%.0f</td>"+
 					"<td class=\"text-right\">%.0f%%</td>"+
 					"<td class=\"text-right\">%.0f</td>"+
@@ -355,17 +354,17 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 				n.MsOffset)
 		} else {
 			HTML += fmt.Sprintf("<td class=\"text-right\">%s</td>"+
-					"<td class=\"text-right\">%.0f</td>"+
-					"<td class=\"text-right\">%.0f</td>"+
-					"<td class=\"text-right\">%s</td>\n"+
-					"<td class=\"text-right\">%d</td>\n",
+				"<td class=\"text-right\">%.0f</td>"+
+				"<td class=\"text-right\">%.0f</td>"+
+				"<td class=\"text-right\">%s</td>\n"+
+				"<td class=\"text-right\">%d</td>\n",
 				"-",
 				n.AvgRows,
 				n.MaxRows,
 				n.MaxSeg,
 				n.Workers)
 			HTML += fmt.Sprintf(
-					"<td class=\"text-right\">%.0f</td>"+
+				"<td class=\"text-right\">%.0f</td>"+
 					"<td class=\"text-right\">%.0f</td>"+
 					"<td class=\"text-right\">%.0f%%</td>"+
 					"<td class=\"text-right\">%.0f</td>"+
@@ -410,9 +409,9 @@ func RenderExplainHtml(e *plan.Explain) string {
 	HTML += "<tr>"
 	HTMLTH1 := "<tr>"
 	HTMLTH1 = "<th></th>" +
-	"<th colspan=\"2\" class=\"text-center\">Object</th>" +
-	"<th colspan=\"4\" class=\"text-center\">Cost</th>" +
-	"<th colspan=\"1\" class=\"text-center\">Estimated</th>"
+		"<th colspan=\"2\" class=\"text-center\">Object</th>" +
+		"<th colspan=\"4\" class=\"text-center\">Cost</th>" +
+		"<th colspan=\"1\" class=\"text-center\">Estimated</th>"
 	HTMLTH2 := "<tr>"
 	HTMLTH2 += "<th>Query Plan:</th>" +
 		"<th class=\"text-right\">Name</th>" +
@@ -522,7 +521,6 @@ func main() {
 	}
 
 	testPlan = string(filedata)
-
 
 	// Using gorilla/mux as it provides named URL variable parsing
 	r := mux.NewRouter()
