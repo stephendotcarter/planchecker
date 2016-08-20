@@ -3,7 +3,13 @@
 <head>
     <title>planchecker</title>
     <link rel="icon" type="image/png" href="/assets/document-node.png">
+
+    <script src="/assets/jquery-2.2.4.min.js"></script>
+    <script src="/assets/bootstrap.min.js"></script>
+    <script src="/assets/planchecker.js"></script>
+
     <link rel="stylesheet" href="/assets/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/planchecker.css">
 </head>
 <body>
 
@@ -17,9 +23,13 @@
     <!-- ROW START -->
     <div class="row">
         <!-- COL START -->
-        <div class="col-sm-6 text-justify">
+        <div class="col-sm-2"></div>
+
+        <div class="col-sm-8 text-justify">
 
             <!-- FORM START -->
+            <section id="section_form">
+
             <h3>New EXPLAIN</h3>
 
             <p><code>Copy/paste</code> or <code>Choose File</code> and click <code>Submit</code>.</p>
@@ -32,19 +42,61 @@ output here">%s</textarea>
             </label>
             <span class='label label-info' id="upload-file-info"></span>
             <div class="form-group  pull-right">
-            <span data-toggle="tooltip" data-placement="bottom" title="Store plan in database and provide a unique URL to access it"><input name="store" id="store" type="checkbox" checked> Remember plan</span>&nbsp;
             <button type="submit" class="btn btn-success" data-toggle="tooltip" data-placement="bottom" title="Submit and run the checks">Submit</button>
             </div>
             </form>
+
+            </section>
             <!-- FORM END -->
 
             <!-- STEPS START -->
-            <h3>Recommended Steps</h3>
+            <section id="section_steps">
 
-            <p>When a query plan is generated whitespace is used to indent each node. It's important to keep the correct whitespace indentation when submitting the plan to planchecker or else the plan may be parsed incorrectly.</p>
+            <h3>Best Practices</h3>
 
-            <p>The following steps are recommended for best results:</p>
+            <p>The following are some best practices for using planchecker.</p>
+
+            <h4>General</h4>
+            <ul>
+                <li>Provide <code>EXPLAIN ANALYZE</code> so planchecker can give more details results.</li>
+                <li>Provide entire output including <code>Slice statistics</code>, <code>Statement statistics</code>, <code>Settings</code>, etc... <a class="btn btn-default btn-xs" onclick="$('#example_explain').toggle('slow')">Show Example</a>
+            <pre id="example_explain">repro=# EXPLAIN ANALYZE SELECT * FROM table1 t1, table2 t2 WHERE t1.col1 = t2.col2;
+                                                                              QUERY PLAN                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 4:1  (slice2; segments: 4)  (cost=114.00..451.00 rows=10000 width=16)
+   Rows out:  10000 rows at destination with 6.146 ms to first row, 13 ms to end, start offset by 0.616 ms.
+   ->  Hash Join  (cost=114.00..451.00 rows=2500 width=16)
+         Hash Cond: t2.col2 = t1.col1
+         Rows out:  Avg 2500.0 rows x 4 workers.  Max 2501 rows (seg2) with 7.449 ms to first row, 8.642 ms to end, start offset by 1.391 ms.
+         Executor memory:  32K bytes avg, 32K bytes max (seg0).
+         Work_mem used:  32K bytes avg, 32K bytes max (seg0). Workfile: (0 spilling, 0 reused)
+         (seg2)   Hash chain length 1.0 avg, 1 max, using 1000 of 524341 buckets.
+         ->  Seq Scan on table2 t2  (cost=0.00..112.00 rows=2500 width=8)
+               Rows out:  Avg 2500.0 rows x 4 workers.  Max 2501 rows (seg2) with 0.023 ms to first row, 0.182 ms to end, start offset by 8.815 ms.
+         ->  Hash  (cost=64.00..64.00 rows=1000 width=8)
+               Rows in:  Avg 1000.0 rows x 4 workers.  Max 1000 rows (seg0) with 0.369 ms to end, start offset by 12 ms.
+               ->  Broadcast Motion 4:4  (slice1; segments: 4)  (cost=0.00..64.00 rows=1000 width=8)
+                     Rows out:  Avg 1000.0 rows x 4 workers at destination.  Max 1000 rows (seg0) with 0.042 ms to first row, 0.212 ms to end, start offset by 12 ms.
+                     ->  Seq Scan on table1 t1  (cost=0.00..14.00 rows=250 width=8)
+                           Rows out:  Avg 250.0 rows x 4 workers.  Max 251 rows (seg2) with 0.727 ms to first row, 0.749 ms to end, start offset by 3.875 ms.
+ Slice statistics:
+   (slice0)    Executor memory: 386K bytes.
+   (slice1)    Executor memory: 207K bytes avg x 4 workers, 207K bytes max (seg0).
+   (slice2)    Executor memory: 8488K bytes avg x 4 workers, 8488K bytes max (seg0).  Work_mem: 32K bytes max.
+ Statement statistics:
+   Memory used: 128000K bytes
+ Settings:  optimizer=off
+ Optimizer status: legacy query optimizer
+ Total runtime: 14.718 ms
+(25 rows)</pre>
+                </li>
+                <li>Whitespace is used to indent each node so it's important to keep the correct whitespace.</li>
+            </ul>
             
+            <p>
+            
+            </p>
+
             <h4>Using psql</h4>
             <ol>
                 <li>Create an .sql file containing the query:
@@ -53,10 +105,10 @@ EXPLAIN ANALYZE SELECT * FROM mytable
 WHERE date = '1955-11-05' AND location = 'Hill Valley';</pre>
                 </li>
                 <li>Execute the query using psql and redirect the output:
-                <pre>$ psql -f myquery.sql > myquery.sql.out</pre>
+                <pre>$ psql -f myquery.sql > myquery.out</pre>
                 </li>
                 <li>Upload the output to planchecker:<br>
-                <code>Choose File</code>, select <code>myquery.sql.out</code>, click <code>Submit</code>
+                <code>Choose File</code>, select <code>myquery.out</code>, click <code>Submit</code>
                 </li>
             </ol>
 
@@ -73,30 +125,34 @@ WHERE date = '1955-11-05' AND location = 'Hill Valley';</pre>
                 <li>Copy/Paste the selected text in to planchecker and click <code>Submit</code>.</li>
             </ol>
             
+            </section>
             <!-- STEPS END -->
-        </div>
-        <!-- COL END -->
-
-        <!-- COL START -->
-        <div class="col-sm-6 text-justify">
-
-            <!-- ABOUT START -->
-            <h3>About</h3>
-
-            <p>planchecker parses <code>EXPLAIN</code> or <code>EXPLAIN ANALYZE</code> output generated from <a href="http://greenplum.org/" target="_blank">Greenplum</a> database and checks for common issues which may affect query performance.</p>
-
-            <p>While the query plans look similar to Postgres they are formatted differently and contain nodes which are specific to Greenplum.</p>
-
-            <p>Because <a href="http://greenplum.org/" target="_blank">Greenplum</a> and <a href="http://hawq.incubator.apache.org/" target="_blank">Apache HAWQ</a> share similar codebase, planchecker should also work with <a href="http://hawq.incubator.apache.org/" target="_blank">Apache HAWQ</a> query plans.</p>
-            <!-- ABOUT END -->
 
             <!-- CHECKS START -->
+            <section id="section_checks">
+
             <h3>Checks</h3>
 
             <p>Here are the current checks:</p>
             %s
             <p>New checks may be added in future.</p>
+
+            </section>
             <!-- CHECKS END -->
+
+            <!-- ABOUT START -->
+            <section id="section_about">
+
+            <h3>About</h3>
+
+            <p>planchecker parses <code>EXPLAIN</code> or <code>EXPLAIN ANALYZE</code> output generated from <a href="http://greenplum.org/" target="_blank">Greenplum</a> database and checks for common issues which may affect query performance.</p>
+
+            <p>While the query plans look similar to <a href="https://www.postgresql.org/" target="_blank">PostgreSQL</a> they are formatted differently and contain nodes which are specific to <a href="http://greenplum.org/" target="_blank">Greenplum</a>.</p>
+
+            <p>Because <a href="http://greenplum.org/" target="_blank">Greenplum</a> and <a href="http://hawq.incubator.apache.org/" target="_blank">Apache HAWQ</a> share similar codebase, planchecker should also work with <a href="http://hawq.incubator.apache.org/" target="_blank">Apache HAWQ</a> query plans.</p>
+
+            </section>
+            <!-- ABOUT END -->
 
         </div>
         <!-- COL END -->
@@ -106,21 +162,11 @@ WHERE date = '1955-11-05' AND location = 'Hill Valley';</pre>
     <hr class="small">
 
     <footer>
-        <p class="text-muted text-center">planchecker for Greenplum</p>
+        <p class="text-muted text-center">planchecker for Greenplum | Feedback/issues/enhancements: <a mailto="scarter@pivotal.io">scarter@pivotal.io</a></p>
     </footer>
 
 </div>
 <!-- CONTAINER END -->
-
-<script src="/assets/jquery-2.2.4.min.js"></script>
-<script src="/assets/bootstrap.min.js"></script>
-
-<script>
-    // Initialize tooltips
-    $(function () {
-        $('[data-toggle="tooltip"]').tooltip()
-    })
-</script>
 
 </body>
 </html>
