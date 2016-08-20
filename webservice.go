@@ -24,6 +24,7 @@ type PlanRecord struct {
 	Ref       string
 	Plantext  string
 	CreatedAt time.Time
+	Saved     bool
 }
 
 var (
@@ -87,8 +88,8 @@ func SelectPlan(ref string) (PlanRecord, error) {
 		return planRecord, err
 	}
 
-	// Query by ref
-	rows, err := dbconn.Query("SELECT id, ref, plantext, created_at FROM plans WHERE ref = $1", ref)
+	// Query by ref and save=true
+	rows, err := dbconn.Query("SELECT id, ref, plantext, created_at, saved FROM plans WHERE saved = TRUE AND ref = $1", ref)
 	if err != nil {
 		return planRecord, errors.New("Database query failed")
 	}
@@ -96,7 +97,7 @@ func SelectPlan(ref string) (PlanRecord, error) {
 	// Retireve the row
 	count := 0
 	for rows.Next() {
-		err = rows.Scan(&planRecord.Id, &planRecord.Ref, &planRecord.Plantext, &planRecord.CreatedAt)
+		err = rows.Scan(&planRecord.Id, &planRecord.Ref, &planRecord.Plantext, &planRecord.CreatedAt, &planRecord.Saved)
 		if err != nil {
 			return planRecord, errors.New("Retrieving row failed")
 		}
@@ -147,6 +148,34 @@ func InsertPlan(planText string) (PlanRecord, error) {
 	return planRecord, nil
 }
 
+// Insert new plan in to database and return database record
+func SavePlan(planRef string) error {
+	var err error
+
+	// Open connection to DB
+	dbconn, err := OpenDb()
+	if err != nil {
+		return err
+	}
+
+	// Prepare the statement
+	stmt, err := dbconn.Prepare("UPDATE plans SET saved = true WHERE ref = $1")
+	if err != nil {
+		return err
+	}
+
+	// Insert the record
+	_, err = stmt.Exec(planRef)
+	if err != nil {
+		return err
+	}
+
+	// Close connection to DB
+	CloseDb(dbconn)
+
+	return nil
+}
+
 func GenerateChecklistHtml() string {
 	checks := ""
 	checks += "<table class=\"table table-bordered table-condensed table-striped\">\n"
@@ -189,25 +218,35 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func PlanRefHandler(w http.ResponseWriter, r *http.Request) {
+	var err error
+
 	// Read plan ID
 	vars := mux.Vars(r)
 	planRef := vars["planRef"]
 
-	// Print the repsonse
-	planRecord, err := SelectPlan(planRef)
-	if err != nil {
-		fmt.Fprintf(w, "Error loading plan from database:\n--\n%s", err)
-		return
-	}
+	if r.Method == "GET" {
+		// Get the existing plan
+		planRecord, err := SelectPlan(planRef)
+		if err != nil {
+			fmt.Fprintf(w, "Error loading plan from database:\n--\n%s", err)
+			return
+		}
 
-	GenerateExplain(w, r, planRecord, false)
+		GenerateExplain(w, r, planRecord, false)
+	} else if r.Method == "POST" {
+		err = SavePlan(planRef)
+		if err != nil {
+			fmt.Fprintf(w, "{\"status\":\"failure\"}")
+		} else {
+			fmt.Fprintf(w, "{\"status\":\"success\",\"ref\":\"%s\"}", planRef)
+		}
+	}
 }
 
 func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var planText string
 	var planRecord PlanRecord
-	var store bool
 
 	// Attempt to read the uploaded file
 	r.ParseMultipartForm(32 << 20)
@@ -230,24 +269,20 @@ func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
 		planText = r.FormValue("plantext")
 	}
 
-	// Check if user wants to remember the plan
-	storeCheckbox := r.FormValue("store")
-	if storeCheckbox == "on" {
-		store = true
-	} else {
-		store = false
+	// Insert the plan
+	planRecord, err = InsertPlan(planText)
+	if err != nil {
+		fmt.Fprintf(w, "<!DOCTYPE html><pre>Oops... we had a problem parsing the plan<a href=\"/\">Back</a></pre>")
+		return
 	}
 
-	planRecord.Plantext = planText
-
-	GenerateExplain(w, r, planRecord, store)
+	GenerateExplain(w, r, planRecord, true)
 }
 
-func GenerateExplain(w http.ResponseWriter, r *http.Request, planRecord PlanRecord, store bool) {
+func GenerateExplain(w http.ResponseWriter, r *http.Request, planRecord PlanRecord, isNew bool) {
 
 	// Create new explain object
 	var explain plan.Explain
-	var saveNotif string
 
 	// Init the explain from string
 	err := explain.InitFromString(planRecord.Plantext, true)
@@ -256,19 +291,14 @@ func GenerateExplain(w http.ResponseWriter, r *http.Request, planRecord PlanReco
 		return
 	}
 
-	// Save the plan if parsing was successful and the plan is not already saved
-	if planRecord.Ref == "" && store == true {
-		planRecord, err = InsertPlan(planRecord.Plantext)
-		if err != nil {
-			fmt.Fprintf(w, "<!DOCTYPE html><pre>Oops... we had a problem saving the plan:\n--\n%s\n\n<a href=\"/\">Back</a></pre>", err)
-			return
-		}
-
-		// Generate full plan URL
-		refUrl := fmt.Sprintf("http://%s/plan/%s", r.Host, planRecord.Ref)
-
-		// Prompt user to save the URL
-		saveNotif = fmt.Sprintf("<div class=\"alert alert-info\" style=\"margin-top:20px;\" role=\"alert\">Bookmark this URL if you want to access the results again: <strong>%s</strong></div>", refUrl)
+	linkState := ""
+	saveState := ""
+	if isNew == true {
+		linkState = "hidden"
+		saveState = ""
+	} else {
+		linkState = ""
+		saveState = "hidden"
 	}
 
 	// Generate the plan HTML
@@ -279,7 +309,7 @@ func GenerateExplain(w http.ResponseWriter, r *http.Request, planRecord PlanReco
 	pageHtml := LoadHtml("templates/plan.html")
 
 	// Render with the plan HTML
-	fmt.Fprintf(w, pageHtml, planHtml, planRecord.Ref, saveNotif)
+	fmt.Fprintf(w, pageHtml, planHtml, planRecord.Ref, planRecord.Ref, linkState, saveState)
 }
 
 // Render node for output to HTML

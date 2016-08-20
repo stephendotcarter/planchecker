@@ -3,7 +3,14 @@
 <head>
     <title>planchecker</title>
     <link rel="icon" type="image/png" href="/assets/document-node.png">
+
+    <script src="/assets/jquery-2.2.4.min.js"></script>
+    <script src="/assets/bootstrap.min.js"></script>
+    <script src="/assets/planchecker.js"></script>
+
     <link rel="stylesheet" href="/assets/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/planchecker.css">
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
 </head>
 <body>
 
@@ -11,7 +18,8 @@
     <li><img src="/assets/document-node.png" />&nbsp;<strong>planchecker for Greenplum</strong></li>
     <li><a href="/">Home</a></li>
     <li>Plan</li>
-    <li class="active"><a href="/plan/%[2]s">%[2]s</a></li>
+    <li class="active %[4]s" id="planRef"><a href="/plan/%[3]s">%[3]s</a><span is="bookmarkMsg">&nbsp;&nbsp;<i class="fa fa-arrow-left" aria-hidden="true"></i> Save this link to access the results</span></li>
+    <li class="active %[5]s" id="planSave"><button class="btn btn-primary btn-xs" onclick="savePlan('%[3]s')">Save Plan<span id="saveSpinner" class="hidden">&nbsp<i class="fa fa-spinner fa-spin" style="font-size:12px"> </i></span></button></li>
 </ol>
 
 <!-- CONTAINER START -->
@@ -20,8 +28,11 @@
     <div class="row">
         <!-- COL START -->
         <div class="col-xs-12">
-            %[3]s
+
+            <div class="alert alert-info" role="alert">Any warnings displayed below are simply suggestions that may improve performance. They do not necessarily mean the query is bad!</div>
+
             <div class="plan">%[1]s</div>
+
         </div>
         <!-- COL END -->
     </div>
