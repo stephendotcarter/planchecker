@@ -10,53 +10,69 @@
 
     <link rel="stylesheet" href="/assets/bootstrap.min.css">
     <link rel="stylesheet" href="/assets/planchecker.css">
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
 </head>
 <body>
 
-<ol class="breadcrumb">
-    <li><img src="/assets/document-node.png" />&nbsp;<strong>planchecker for Greenplum</strong></li>
-    <li><a href="/">Home</a></li>
-</ol>
+<!-- NAVBAR START -->
+<nav class="navbar navbar-inverse navbar-static-top">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="/"><img src="/assets/document-node.png" style="display:inline; width:20px;" /> planchecker</a>
+        </div>
+
+        <div>
+            <ul class="nav navbar-nav navbar-left">
+                <li class="active"><a href="/">Home</a></li>
+                <li><a href="#bestpractices">Best Practices</a></li>
+                <li><a href="#checks">Checks</a></li>
+                <li><a href="#about">About</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<!-- NAVBAR END -->
 
 <!-- CONTAINER START -->
-<div class="container">
+<div class="container" style="margin-left:0px;">
     <!-- ROW START -->
     <div class="row">
         <!-- COL START -->
-        <div class="col-sm-2"></div>
-
-        <div class="col-sm-8 text-justify">
+        <div class="col-sm-12 text-justify">
 
             <!-- FORM START -->
-            <section id="section_form">
-
-            <h3>New EXPLAIN</h3>
+            <section id="section_new">
+            <a name="new"></a>
+            <h2>New EXPLAIN</h2>
 
             <p><code>Copy/paste</code> or <code>Choose File</code> and click <code>Submit</code>.</p>
 
             <form method="POST" action="/plan/" enctype="multipart/form-data">
                 <textarea class="form-control" name="plantext" id="plantext" rows="12" style="margin-bottom:10px" data-toggle="tooltip" data-placement="left" title="Copy/Paste the EXPLAIN
 output here">%s</textarea>
+            
             <label class="btn btn-primary btn-file" data-toggle="tooltip" data-placement="left" title="Upload file from filesystem">
             Choose File <input type="file" name="uploadfile" style="display: none;" onchange="$('#upload-file-info').html($(this).prop('files')[0]['name'] );">
             </label>
             <span class='label label-info' id="upload-file-info"></span>
-            <div class="form-group  pull-right">
-            <button type="submit" class="btn btn-success" data-toggle="tooltip" data-placement="bottom" title="Submit and run the checks">Submit</button>
-            </div>
+        
+            <button type="submit" class="btn btn-success pull-right" data-toggle="tooltip" data-placement="bottom" title="Submit and run the checks">Submit</button>
+            
+            <input type="hidden" id="action" name="action" value="parse">
             </form>
+            <p style="margin-top:5px;" class="text-muted"><em>Note: No data is stored unless you click the "Save Plan" button on the results page.</em></p>
 
             </section>
             <!-- FORM END -->
 
             <!-- STEPS START -->
-            <section id="section_steps">
-
-            <h3>Best Practices</h3>
+            <section id="section_bestpractices">
+            <a name="bestpractices"></a>
+            <h2>Best Practices</h2>
 
             <p>The following are some best practices for using planchecker.</p>
 
-            <h4>General</h4>
+            <h3>General</h3>
             <ul>
                 <li>Provide <code>EXPLAIN ANALYZE</code> so planchecker can give more details results.</li>
                 <li>Provide entire output including <code>Slice statistics</code>, <code>Statement statistics</code>, <code>Settings</code>, etc... <a class="btn btn-default btn-xs" onclick="$('#example_explain').toggle('slow')">Show Example</a>
@@ -92,12 +108,8 @@ output here">%s</textarea>
                 </li>
                 <li>Whitespace is used to indent each node so it's important to keep the correct whitespace.</li>
             </ul>
-            
-            <p>
-            
-            </p>
 
-            <h4>Using psql</h4>
+            <h3>Using psql</h3>
             <ol>
                 <li>Create an .sql file containing the query:
                 <pre>$ cat myquery.sql
@@ -112,7 +124,7 @@ WHERE date = '1955-11-05' AND location = 'Hill Valley';</pre>
                 </li>
             </ol>
 
-            <h4>Using pgAdmin</h4>
+            <h3>Using pgAdmin</h3>
             <p><em>Note: When using pgAdmin each line of the output will be enclosed in doublequotes.<br>This is the expected format. Please do not modify it.</em></p>
             <ol>
                 <li>Open <code>pgAdmin</code>.</li>
@@ -130,8 +142,8 @@ WHERE date = '1955-11-05' AND location = 'Hill Valley';</pre>
 
             <!-- CHECKS START -->
             <section id="section_checks">
-
-            <h3>Checks</h3>
+            <a name="checks"></a>
+            <h2>Checks</h2>
 
             <p>Here are the current checks:</p>
             %s
@@ -142,8 +154,8 @@ WHERE date = '1955-11-05' AND location = 'Hill Valley';</pre>
 
             <!-- ABOUT START -->
             <section id="section_about">
-
-            <h3>About</h3>
+            <a name="about"></a>
+            <h2>About</h2>
 
             <p>planchecker parses <code>EXPLAIN</code> or <code>EXPLAIN ANALYZE</code> output generated from <a href="http://greenplum.org/" target="_blank">Greenplum</a> database and checks for common issues which may affect query performance.</p>
 
@@ -159,10 +171,12 @@ WHERE date = '1955-11-05' AND location = 'Hill Valley';</pre>
     </div>
     <!-- ROW END -->
 
-    <hr class="small">
+    <hr>
 
     <footer>
-        <p class="text-muted text-center">planchecker for Greenplum | Feedback/issues/enhancements: <a mailto="scarter@pivotal.io">scarter@pivotal.io</a></p>
+        <p class="text-muted text-left">
+            <a href="/">planchecker</a>&nbsp;&nbsp;-&nbsp;&nbsp;<a href="https://github.com/stephendotcarter/planchecker">GitHub Project</a>&nbsp;&nbsp;-&nbsp;&nbsp;<a href="https://github.com/stephendotcarter/planchecker/issues">Issues</a>
+        </p>
     </footer>
 
 </div>

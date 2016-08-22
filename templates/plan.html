@@ -14,13 +14,24 @@
 </head>
 <body>
 
-<ol class="breadcrumb">
-    <li><img src="/assets/document-node.png" />&nbsp;<strong>planchecker for Greenplum</strong></li>
-    <li><a href="/">Home</a></li>
-    <li>Plan</li>
-    <li class="active %[4]s" id="planRef"><a href="/plan/%[3]s">%[3]s</a><span is="bookmarkMsg">&nbsp;&nbsp;<i class="fa fa-arrow-left" aria-hidden="true"></i> Save this link to access the results</span></li>
-    <li class="active %[5]s" id="planSave"><button class="btn btn-primary btn-xs" onclick="savePlan('%[3]s')">Save Plan<span id="saveSpinner" class="hidden">&nbsp<i class="fa fa-spinner fa-spin" style="font-size:12px"> </i></span></button></li>
-</ol>
+<!-- NAVBAR START -->
+<nav class="navbar navbar-inverse navbar-static-top">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="/"><img src="/assets/document-node.png" style="display:inline; width:20px;" /> planchecker</a>
+        </div>
+
+        <div>
+            <ul class="nav navbar-nav">
+                <li><a href="/">Home</a></li>
+                <li class="active hidden" id="planRef"><a id="planRefLink" href="/plan/%[3]s">%[3]s</a></li>
+                <p id="bookmarkMsg" class="navbar-text hidden"><i class="fa fa-arrow-left" aria-hidden="true"></i> Bookmark this link to access the results</p>
+                <li class="active hidden" id="planSave"><button class="btn btn-primary navbar-btn" onclick="savePlan()">Save Plan<span id="saveSpinner" class="hidden">&nbsp<i class="fa fa-spinner fa-spin" style="font-size:12px">&nbsp;</i></span></button></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<!-- NAVBAR END -->
 
 <!-- CONTAINER START -->
 <div class="container-fluid">
@@ -29,25 +40,32 @@
         <!-- COL START -->
         <div class="col-xs-12">
 
-            <div class="alert alert-info" role="alert">Any warnings displayed below are simply suggestions that may improve performance. They do not necessarily mean the query is bad!</div>
+            <div id="alertTop" class="alert alert-info hidden" role="alert">Any warnings displayed are based on common causes of perfermance issues. But no guarantee can be give that correcting these issues will definitely increase query performance.</div>
 
             <div class="plan">%[1]s</div>
+
+            <div class="alert alert-info" style="margin-top:10px;" role="alert">Any warnings displayed are based on common causes of perfermance issues. But no guarantee can be give that correcting these issues will definitely increase query performance.</div>
 
         </div>
         <!-- COL END -->
     </div>
     <!-- ROW END -->
 
-    <hr class="small">
+    <hr>
 
     <footer>
-        <p class="text-muted text-center">planchecker for Greenplum</p>
+        <p class="text-muted text-left">
+            <a href="/">planchecker</a>&nbsp;&nbsp;-&nbsp;&nbsp;<a href="https://github.com/stephendotcarter/planchecker">GitHub Project</a>&nbsp;&nbsp;-&nbsp;&nbsp;<a href="https://github.com/stephendotcarter/planchecker/issues">Issues</a>
+        </p>
     </footer>
 
 </div>
 <!-- CONTAINER END -->
 
-<script src="/assets/jquery-2.2.4.min.js"></script>
+<script>
+    planRef = "%[3]s";
+    planTextBase64 = "%[2]s";
+</script>
 
 </body>
 </html>

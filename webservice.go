@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -24,7 +25,6 @@ type PlanRecord struct {
 	Ref       string
 	Plantext  string
 	CreatedAt time.Time
-	Saved     bool
 }
 
 var (
@@ -89,7 +89,7 @@ func SelectPlan(ref string) (PlanRecord, error) {
 	}
 
 	// Query by ref and save=true
-	rows, err := dbconn.Query("SELECT id, ref, plantext, created_at, saved FROM plans WHERE saved = TRUE AND ref = $1", ref)
+	rows, err := dbconn.Query("SELECT id, ref, plantext, created_at FROM plans WHERE ref = $1", ref)
 	if err != nil {
 		return planRecord, errors.New("Database query failed")
 	}
@@ -97,7 +97,7 @@ func SelectPlan(ref string) (PlanRecord, error) {
 	// Retireve the row
 	count := 0
 	for rows.Next() {
-		err = rows.Scan(&planRecord.Id, &planRecord.Ref, &planRecord.Plantext, &planRecord.CreatedAt, &planRecord.Saved)
+		err = rows.Scan(&planRecord.Id, &planRecord.Ref, &planRecord.Plantext, &planRecord.CreatedAt)
 		if err != nil {
 			return planRecord, errors.New("Retrieving row failed")
 		}
@@ -148,34 +148,6 @@ func InsertPlan(planText string) (PlanRecord, error) {
 	return planRecord, nil
 }
 
-// Insert new plan in to database and return database record
-func SavePlan(planRef string) error {
-	var err error
-
-	// Open connection to DB
-	dbconn, err := OpenDb()
-	if err != nil {
-		return err
-	}
-
-	// Prepare the statement
-	stmt, err := dbconn.Prepare("UPDATE plans SET saved = true WHERE ref = $1")
-	if err != nil {
-		return err
-	}
-
-	// Insert the record
-	_, err = stmt.Exec(planRef)
-	if err != nil {
-		return err
-	}
-
-	// Close connection to DB
-	CloseDb(dbconn)
-
-	return nil
-}
-
 func GenerateChecklistHtml() string {
 	checks := ""
 	checks += "<table class=\"table table-bordered table-condensed table-striped\">\n"
@@ -202,6 +174,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	// Load HTML
 	pageHtml := LoadHtml("templates/index.html")
 
+	// Get list of checks from planchecker
 	checklistHtml := GenerateChecklistHtml()
 
 	// If we're not running in dev or local set testPlan to empty string
@@ -219,6 +192,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 func PlanRefHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
+	var planRecord PlanRecord
 
 	// Read plan ID
 	vars := mux.Vars(r)
@@ -226,27 +200,25 @@ func PlanRefHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 		// Get the existing plan
-		planRecord, err := SelectPlan(planRef)
+		planRecord, err = SelectPlan(planRef)
 		if err != nil {
 			fmt.Fprintf(w, "Error loading plan from database:\n--\n%s", err)
 			return
 		}
 
+		// Now generate the plan
 		GenerateExplain(w, r, planRecord, false)
-	} else if r.Method == "POST" {
-		err = SavePlan(planRef)
-		if err != nil {
-			fmt.Fprintf(w, "{\"status\":\"failure\"}")
-		} else {
-			fmt.Fprintf(w, "{\"status\":\"success\",\"ref\":\"%s\"}", planRef)
-		}
+	} else {
+		fmt.Fprintf(w, "{\"status\":\"HTTP method not supported\"}")
 	}
 }
 
 func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
-	var planText string
 	var planRecord PlanRecord
+
+	// Get form action
+	action := r.FormValue("action")
 
 	// Attempt to read the uploaded file
 	r.ParseMultipartForm(32 << 20)
@@ -262,21 +234,31 @@ func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		fmt.Printf("Read %d bytes from file upload", n)
-		planText = buf.String()
+		planRecord.Plantext = buf.String()
 
 	} else {
 		// Else get the plan from POST textarea
-		planText = r.FormValue("plantext")
+		planRecord.Plantext = r.FormValue("plantext")
 	}
 
 	// Insert the plan
-	planRecord, err = InsertPlan(planText)
-	if err != nil {
-		fmt.Fprintf(w, "<!DOCTYPE html><pre>Oops... we had a problem parsing the plan<a href=\"/\">Back</a></pre>")
-		return
-	}
+	if action == "save" {
+		// When saving the plan has been submitted as base64 so needs to be decoded
+		planTextDecoded, err := base64.StdEncoding.DecodeString(planRecord.Plantext)
 
-	GenerateExplain(w, r, planRecord, true)
+		// Insert into database
+		planRecord, err = InsertPlan(string(planTextDecoded))
+		if err != nil {
+			fmt.Fprintf(w, "{\"status\":\"failure\"}")
+		} else {
+			fmt.Fprintf(w, "{\"status\":\"success\",\"ref\":\"%s\"}", planRecord.Ref)
+		}
+
+	} else if action == "parse" {
+		GenerateExplain(w, r, planRecord, true)
+	} else {
+		fmt.Fprintf(w, "Oops... no action specified")
+	}
 }
 
 func GenerateExplain(w http.ResponseWriter, r *http.Request, planRecord PlanRecord, isNew bool) {
@@ -291,15 +273,7 @@ func GenerateExplain(w http.ResponseWriter, r *http.Request, planRecord PlanReco
 		return
 	}
 
-	linkState := ""
-	saveState := ""
-	if isNew == true {
-		linkState = "hidden"
-		saveState = ""
-	} else {
-		linkState = ""
-		saveState = "hidden"
-	}
+	planTextEncoded := base64.StdEncoding.EncodeToString([]byte(planRecord.Plantext))
 
 	// Generate the plan HTML
 	//planHtml := explain.PrintPlanHtml()
@@ -309,7 +283,10 @@ func GenerateExplain(w http.ResponseWriter, r *http.Request, planRecord PlanReco
 	pageHtml := LoadHtml("templates/plan.html")
 
 	// Render with the plan HTML
-	fmt.Fprintf(w, pageHtml, planHtml, planRecord.Ref, planRecord.Ref, linkState, saveState)
+	fmt.Fprintf(w, pageHtml,
+		planHtml,
+		planTextEncoded,
+		planRecord.Ref)
 }
 
 // Render node for output to HTML

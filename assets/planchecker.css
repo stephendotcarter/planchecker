@@ -4,3 +4,9 @@ section{
 #example_explain{
     display:none;
 }
+.container{
+    max-width:800px;
+}
+.plan{
+    margin-top:0px;
+}
