@@ -1,13 +1,8 @@
 {
-	"ImportPath": "github.com/pivotal-gss/planchecker",
+	"ImportPath": "github.com/stephendotcarter/planchecker",
 	"GoVersion": "go1.5",
 	"GodepVersion": "v71",
 	"Deps": [
-		{
-			"ImportPath": "github.com/go-sql-driver/mysql",
-			"Comment": "v1.2-196-g3654d25",
-			"Rev": "3654d25ec346ee8ce71a68431025458d52a38ac0"
-		},
 		{
 			"ImportPath": "github.com/gorilla/context",
 			"Comment": "v1.1-2-ga8d44e7",
@@ -19,8 +14,14 @@
 			"Rev": "9c19ed558d5df4da88e2ade9c8940d742aef0e7e"
 		},
 		{
-			"ImportPath": "github.com/pivotal-gss/utils/mlogger",
-			"Rev": "2d12060ef1acdcf5297bf343a7e85db03d409df0"
+			"ImportPath": "github.com/lib/pq",
+			"Comment": "go1.0-cutoff-84-g3cd0097",
+			"Rev": "3cd0097429be7d611bb644ef85b42bfb102ceea4"
+		},
+		{
+			"ImportPath": "github.com/lib/pq/oid",
+			"Comment": "go1.0-cutoff-84-g3cd0097",
+			"Rev": "3cd0097429be7d611bb644ef85b42bfb102ceea4"
 		}
 	]
 }
