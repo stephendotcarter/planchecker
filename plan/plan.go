@@ -8,8 +8,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/pivotal-gss/utils/mlogger"
 )
 
 // Represents a node (anything indented with "->" in the plan)
@@ -132,7 +130,7 @@ type Explain struct {
 }
 
 var (
-	log mlogger.Mlogger
+	logDebug bool
 
 	patterns = map[string]*regexp.Regexp{
 		"NODE":    regexp.MustCompile(`(.*) \((cost=(.*)\.\.(.*) ){0,1}rows=(.*) width=(.*)\)`),
@@ -462,6 +460,12 @@ var (
 	warningColor = 31 // RED
 )
 
+func logDebugf(format string, v ...interface{}) {
+	if logDebug == true {
+		fmt.Printf(format, v...)
+	}
+}
+
 // Calculate indent by triming white space and checking diff on string length
 func getIndent(line string) int {
 	return len(line) - len(strings.TrimLeft(line, " "))
@@ -552,7 +556,7 @@ func parseNodeExtraInfo(n *Node) error {
 	var m []string
 
 	for _, line := range n.ExtraInfo[1:] {
-		log.Debugf("%s\n", line)
+		logDebugf("%s\n", line)
 
 		// ROWS
 		re = regexp.MustCompile(`ms to end`)
@@ -563,7 +567,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp()+1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.ActualRows = s
-					log.Debugf("ActualRows %f\n", n.ActualRows)
+					logDebugf("ActualRows %f\n", n.ActualRows)
 				}
 			}
 
@@ -572,7 +576,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp()+1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.ActualRows = s
-					log.Debugf("ActualRows %f\n", n.ActualRows)
+					logDebugf("ActualRows %f\n", n.ActualRows)
 				}
 			}
 
@@ -581,7 +585,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp()+1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.MaxRows = s
-					log.Debugf("MaxRows %f\n", n.MaxRows)
+					logDebugf("MaxRows %f\n", n.MaxRows)
 				}
 			}
 
@@ -590,7 +594,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp()+1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.MsFirst = s
-					log.Debugf("MsFirst %f\n", n.MsFirst)
+					logDebugf("MsFirst %f\n", n.MsFirst)
 				}
 			}
 
@@ -599,7 +603,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp()+1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.MsEnd = s
-					log.Debugf("MsEnd %f\n", n.MsEnd)
+					logDebugf("MsEnd %f\n", n.MsEnd)
 				}
 			}
 
@@ -608,7 +612,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp()+1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.MsOffset = s
-					log.Debugf("MsOffset %f\n", n.MsOffset)
+					logDebugf("MsOffset %f\n", n.MsOffset)
 				}
 			}
 
@@ -617,7 +621,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp()+1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.AvgRows = s
-					log.Debugf("AvgRows %f\n", n.AvgRows)
+					logDebugf("AvgRows %f\n", n.AvgRows)
 				}
 			}
 
@@ -626,7 +630,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp()+1 {
 				if s, err := strconv.ParseInt(m[1], 10, 64); err == nil {
 					n.Workers = s
-					log.Debugf("Workers %d\n", n.Workers)
+					logDebugf("Workers %d\n", n.Workers)
 				}
 			}
 
@@ -635,7 +639,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp()+1 {
 				if s, err := strconv.ParseInt(m[1], 10, 64); err == nil {
 					n.Scans = s
-					log.Debugf("Scans %d\n", n.Scans)
+					logDebugf("Scans %d\n", n.Scans)
 				}
 			}
 
@@ -643,7 +647,7 @@ func parseNodeExtraInfo(n *Node) error {
 			m = re.FindStringSubmatch(line)
 			if len(m) == re.NumSubexp()+1 {
 				n.MaxSeg = m[1]
-				log.Debugf("MaxSeg %s\n", n.MaxSeg)
+				logDebugf("MaxSeg %s\n", n.MaxSeg)
 			}
 
 			re = regexp.MustCompile(`Max (\S+) rows \(`)
@@ -652,7 +656,7 @@ func parseNodeExtraInfo(n *Node) error {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.MaxRows = s
 				}
-				log.Debugf("MaxRows %f\n", n.MaxRows)
+				logDebugf("MaxRows %f\n", n.MaxRows)
 
 			} else {
 				// Only execute this if "Max" was not found
@@ -662,7 +666,7 @@ func parseNodeExtraInfo(n *Node) error {
 					if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 						n.ActualRows = s
 					}
-					log.Debugf("ActualRows %f\n", n.ActualRows)
+					logDebugf("ActualRows %f\n", n.ActualRows)
 				}
 			}
 		}
@@ -675,7 +679,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp()+1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.AvgMem = s
-					log.Debugf("AvgMem %f\n", n.AvgMem)
+					logDebugf("AvgMem %f\n", n.AvgMem)
 				}
 			}
 
@@ -684,7 +688,7 @@ func parseNodeExtraInfo(n *Node) error {
 			if len(m) == re.NumSubexp()+1 {
 				if s, err := strconv.ParseFloat(m[1], 64); err == nil {
 					n.MaxMem = s
-					log.Debugf("MaxMem %f\n", n.MaxMem)
+					logDebugf("MaxMem %f\n", n.MaxMem)
 				}
 			}
 		}
@@ -695,8 +699,8 @@ func parseNodeExtraInfo(n *Node) error {
 		if len(m) == re.NumSubexp()+1 {
 			n.SpillFile, _ = strconv.ParseInt(strings.TrimSpace(m[1]), 10, 64)
 			n.SpillReuse, _ = strconv.ParseInt(strings.TrimSpace(m[2]), 10, 64)
-			log.Debugf("SpillFile %d\n", n.SpillFile)
-			log.Debugf("SpillReuse %d\n", n.SpillReuse)
+			logDebugf("SpillFile %d\n", n.SpillFile)
+			logDebugf("SpillReuse %d\n", n.SpillReuse)
 		}
 
 		// PARTITION SELECTED
@@ -705,8 +709,8 @@ func parseNodeExtraInfo(n *Node) error {
 		if len(m) == re.NumSubexp()+1 {
 			n.PartSelected, _ = strconv.ParseInt(strings.TrimSpace(m[1]), 10, 64)
 			n.PartTotal, _ = strconv.ParseInt(strings.TrimSpace(m[2]), 10, 64)
-			log.Debugf("PartTotal %d\n", n.PartTotal)
-			log.Debugf("PartSelected %d\n", n.PartSelected)
+			logDebugf("PartTotal %d\n", n.PartTotal)
+			logDebugf("PartSelected %d\n", n.PartSelected)
 		}
 
 		// FILTER
@@ -714,7 +718,7 @@ func parseNodeExtraInfo(n *Node) error {
 		m = re.FindStringSubmatch(line)
 		if len(m) == re.NumSubexp()+1 {
 			n.Filter = m[1]
-			log.Debugf("Filter %s\n", n.Filter)
+			logDebugf("Filter %s\n", n.Filter)
 		}
 
 		// #Executor memory:  4978K bytes avg, 39416K bytes max (seg2).
@@ -738,7 +742,7 @@ func parseNodeExtraInfo(n *Node) error {
 // ------------------------------------------------------------
 // ->  Seq Scan on sales_1_prt_outlying_years sales  (cost=0.00..67657.90 rows=2477 width=8)
 func (e *Explain) createNode(line string) *Node {
-	log.Debugf("createNode\n")
+	logDebugf("createNode\n")
 	// Set node indent
 	// Rest of node parsing is handled in parseNodeExtraInfo
 	node := new(Node)
@@ -758,7 +762,7 @@ func (e *Explain) createNode(line string) *Node {
 //               Filter: atttypid = $1
 //
 func (e *Explain) createPlan(line string) *Plan {
-	log.Debugf("createPlan\n")
+	logDebugf("createPlan\n")
 
 	plan := new(Plan)
 	plan.Name = strings.Trim(line, " ")
@@ -774,7 +778,7 @@ func (e *Explain) createPlan(line string) *Plan {
 // Settings:  optimizer=off
 //
 func (e *Explain) parseSettings(line string) {
-	log.Debugf("parseSettings\n")
+	logDebugf("parseSettings\n")
 	e.planFinished = true
 	line = strings.TrimSpace(line)
 	line = line[11:]
@@ -782,7 +786,7 @@ func (e *Explain) parseSettings(line string) {
 	for _, setting := range settings {
 		temp := strings.Split(setting, "=")
 		e.Settings = append(e.Settings, Setting{temp[0], temp[1]})
-		log.Debugf("\t%s\n", setting)
+		logDebugf("\t%s\n", setting)
 
 		// Store actual status of optimizer
 		if temp[0] == "optimizer" {
@@ -798,11 +802,11 @@ func (e *Explain) parseSettings(line string) {
 //   (slice2) * Executor memory: 153897K bytes avg x 96 workers, 153981K bytes max (seg71). Work_mem: 153588K bytes max, 1524650K bytes wanted.
 //
 func (e *Explain) parseSliceStats(line string) {
-	log.Debugf("parseSliceStats\n")
+	logDebugf("parseSliceStats\n")
 	e.planFinished = true
 	for i := e.lineOffset + 1; i < len(e.lines); i++ {
 		if getIndent(e.lines[i]) > 1 {
-			log.Debugf("%s\n", e.lines[i])
+			logDebugf("%s\n", e.lines[i])
 			e.SliceStats = append(e.SliceStats, strings.TrimSpace(e.lines[i]))
 		} else {
 			e.lineOffset = i - 1
@@ -817,7 +821,7 @@ func (e *Explain) parseSliceStats(line string) {
 //   Memory wanted: 1525449K bytes
 //
 func (e *Explain) parseStatementStats(line string) {
-	log.Debugf("parseStatementStats\n")
+	logDebugf("parseStatementStats\n")
 	e.planFinished = true
 
 	e.MemoryUsed = -1
@@ -825,7 +829,7 @@ func (e *Explain) parseStatementStats(line string) {
 
 	for i := e.lineOffset + 1; i < len(e.lines); i++ {
 		if getIndent(e.lines[i]) > 1 {
-			log.Debugf(e.lines[i])
+			logDebugf(e.lines[i])
 			if patterns["STATEMENTSTATS_USED"].MatchString(e.lines[i]) {
 				groups := patterns["STATEMENTSTATS_USED"].FindStringSubmatch(e.lines[i])
 				e.MemoryUsed, _ = strconv.ParseInt(strings.TrimSpace(groups[1]), 10, 64)
@@ -845,40 +849,40 @@ func (e *Explain) parseStatementStats(line string) {
 //  Optimizer status: PQO version 1.620
 //
 func (e *Explain) parseOptimizer(line string) {
-	log.Debugf("PARSE OPTIMIZER\n")
+	logDebugf("PARSE OPTIMIZER\n")
 	e.planFinished = true
 	line = strings.TrimSpace(line)
 	line = line[11:]
 	temp := strings.Split(line, ": ")
 	e.OptimizerStatus = temp[1]
-	log.Debugf("\t%s\n", e.OptimizerStatus)
+	logDebugf("\t%s\n", e.OptimizerStatus)
 }
 
 // ------------------------------------------------------------
 // Total runtime: 7442.441 ms
 //
 func (e *Explain) parseRuntime(line string) {
-	log.Debugf("PARSE RUNTIME\n")
+	logDebugf("PARSE RUNTIME\n")
 	e.planFinished = true
 	line = strings.TrimSpace(line)
 	temp := strings.Split(line, " ")
 	if s, err := strconv.ParseFloat(temp[2], 64); err == nil {
 		e.Runtime = s
 	}
-	log.Debugf("\t%f\n", e.Runtime)
+	logDebugf("\t%f\n", e.Runtime)
 }
 
 // Parse all the lines in to empty structs with only ExtraInfo populated
 func (e *Explain) parseLines() error {
-	log.Debugf("ParseLines\n")
-	log.Debugf("Parsing %d lines\n", len(e.lines))
+	logDebugf("ParseLines\n")
+	logDebugf("Parsing %d lines\n", len(e.lines))
 	e.planFinished = false
 
 	var err error
 	// Loop through lines
 	for e.lineOffset = 0; e.lineOffset < len(e.lines); e.lineOffset++ {
-		log.Debugf("------------------------------ LINE %d ------------------------------\n", e.lineOffset+1)
-		log.Debugf("%s\n", e.lines[e.lineOffset])
+		logDebugf("------------------------------ LINE %d ------------------------------\n", e.lineOffset+1)
+		logDebugf("%s\n", e.lines[e.lineOffset])
 		err = e.parseline(e.lines[e.lineOffset])
 		if err != nil {
 			return err
@@ -903,7 +907,7 @@ func (e *Explain) parseline(line string) error {
 
 	// Ignore whitespace, "QUERY PLAN" and "-"
 	if len(strings.TrimSpace(line)) == 0 || strings.Index(line, "QUERY PLAN") > -1 || line[:1] == "-" {
-		log.Debugf("SKIPPING\n")
+		logDebugf("SKIPPING\n")
 
 	} else if patterns["NODE"].MatchString(line) {
 		// Parse a new node
@@ -954,7 +958,7 @@ func (e *Explain) parseline(line string) error {
 			e.Nodes[len(e.Nodes)-1].ExtraInfo = append(e.Nodes[len(e.Nodes)-1].ExtraInfo, line)
 		}
 	} else {
-		log.Debugf("SKIPPING\n")
+		logDebugf("SKIPPING\n")
 
 	}
 
@@ -982,18 +986,18 @@ func (e *Explain) parseline(line string) error {
 //                     SubPlans[]
 //
 func (e *Explain) BuildTree() {
-	log.Debugf("########## START BUILD TREE ##########\n")
+	logDebugf("########## START BUILD TREE ##########\n")
 
 	// Walk backwards through the Plans array and a
-	log.Debugf("########## PLANS ##########\n")
+	logDebugf("########## PLANS ##########\n")
 	for i := len(e.Plans) - 1; i > -1; i-- {
-		log.Debugf("%d %s\n", e.Plans[i].Indent, e.Plans[i].Name)
+		logDebugf("%d %s\n", e.Plans[i].Indent, e.Plans[i].Name)
 
 		// Loop upwards to find parent
 		for p := len(e.Nodes) - 1; p > -1; p-- {
-			log.Debugf("\t%d %s\n", e.Nodes[p].Indent, e.Nodes[p].Operator)
+			logDebugf("\t%d %s\n", e.Nodes[p].Indent, e.Nodes[p].Operator)
 			if e.Plans[i].Indent > e.Nodes[p].Indent && e.Plans[i].Offset > e.Nodes[p].Offset {
-				log.Debugf("\t\tFOUND PARENT NODE\n")
+				logDebugf("\t\tFOUND PARENT NODE\n")
 				// Prepend to start of array to keep ordering
 				e.Nodes[p].SubPlans = append([]*Plan{e.Plans[i]}, e.Nodes[p].SubPlans...)
 				break
@@ -1002,9 +1006,9 @@ func (e *Explain) BuildTree() {
 	}
 
 	// Insert Nodes
-	log.Debugf("########## NODES ##########\n")
+	logDebugf("########## NODES ##########\n")
 	for i := len(e.Nodes) - 1; i > -1; i-- {
-		log.Debugf("%d %s\n", e.Nodes[i].Indent, e.Nodes[i].Operator)
+		logDebugf("%d %s\n", e.Nodes[i].Indent, e.Nodes[i].Operator)
 
 		foundParent := false
 
@@ -1012,12 +1016,12 @@ func (e *Explain) BuildTree() {
 
 		// First check for parent plans
 		for p := len(e.Plans) - 1; p > -1; p-- {
-			log.Debugf("\t%d %s\n", e.Plans[p].Indent, e.Plans[p].Name)
+			logDebugf("\t%d %s\n", e.Plans[p].Indent, e.Plans[p].Name)
 			// If the parent is a SubPlan it will always be Indent-2 and Offset-1
 			//  SubPlan 1
 			//    ->  Limit  (cost=0.00..9.23 rows=1 width=0)
 			if (e.Nodes[i].Indent-2) == e.Plans[p].Indent && (e.Nodes[i].Offset-1) == e.Plans[p].Offset {
-				log.Debugf("\t\tFOUND PARENT PLAN\n")
+				logDebugf("\t\tFOUND PARENT PLAN\n")
 				// Prepend to start of array to keep ordering
 				e.Plans[p].TopNode = e.Nodes[i]
 				foundParent = true
@@ -1033,9 +1037,9 @@ func (e *Explain) BuildTree() {
 
 		// Then check for parent nodes
 		for p := i - 1; p > -1; p-- {
-			log.Debugf("\t%d %s\n", e.Nodes[p].Indent, e.Nodes[p].Operator)
+			logDebugf("\t%d %s\n", e.Nodes[p].Indent, e.Nodes[p].Operator)
 			if e.Nodes[i].Indent > e.Nodes[p].Indent {
-				log.Debugf("\t\tFOUND PARENT NODE\n")
+				logDebugf("\t\tFOUND PARENT NODE\n")
 				// Prepend to start of array to keep ordering
 				e.Nodes[p].SubNodes = append([]*Node{e.Nodes[i]}, e.Nodes[p].SubNodes...)
 				foundParent = true
@@ -1045,25 +1049,25 @@ func (e *Explain) BuildTree() {
 
 		//
 		if foundParent == false {
-			log.Debugf("\t\tTOPNODE\n")
+			logDebugf("\t\tTOPNODE\n")
 			e.Plans[0].TopNode = e.Nodes[i]
 		}
 	}
 
-	log.Debugf("########## END BUILD TREE ##########\n")
+	logDebugf("########## END BUILD TREE ##########\n")
 }
 
 func (n *Node) CalculateSubNodeDiff() {
 	msChild := 0.0
 	costChild := 0.0
 	for _, s := range n.SubNodes {
-		//log.Debugf("\tSUBNODE%s", s.Operator)
+		//logDebugf("\tSUBNODE%s", s.Operator)
 		msChild += s.MsEnd
 		costChild += s.TotalCost
 	}
 
 	for _, s := range n.SubPlans {
-		//log.Debugf("\tSUBPLANNODE%s", s.TopNode.Operator)
+		//logDebugf("\tSUBPLANNODE%s", s.TopNode.Operator)
 		costChild += s.TopNode.TotalCost
 	}
 
@@ -1184,21 +1188,6 @@ func (e *Explain) PrintPlan() {
 
 }
 
-// Initialize logger
-func (e *Explain) InitLogger(debug bool) error {
-	var err error
-	log, err = mlogger.NewStdoutOnlyLogger()
-	if err != nil {
-		return err
-	}
-
-	if debug == true {
-		log.EnableDebug()
-	}
-
-	return nil
-}
-
 // Main init function
 func (e *Explain) InitPlan(plantext string) error {
 
@@ -1266,9 +1255,9 @@ func (e *Explain) InitPlan(plantext string) error {
 // Init from stdin (useful for psql -f myquery.sql > planchecker)
 // planchecker will handle reading from stdin
 func (e *Explain) InitFromStdin(debug bool) error {
-	e.InitLogger(debug)
+	logDebug = debug
 
-	log.Debugf("InitFromStdin\n")
+	logDebugf("InitFromStdin\n")
 
 	fi, err := os.Stdin.Stat()
 	if err != nil {
@@ -1289,9 +1278,9 @@ func (e *Explain) InitFromStdin(debug bool) error {
 
 // Init from string
 func (e *Explain) InitFromString(plantext string, debug bool) error {
-	e.InitLogger(debug)
+	logDebug = debug
 
-	log.Debugf("InitFromString\n")
+	logDebugf("InitFromString\n")
 
 	err := e.InitPlan(plantext)
 	if err != nil {
@@ -1303,9 +1292,9 @@ func (e *Explain) InitFromString(plantext string, debug bool) error {
 
 // Init from file
 func (e *Explain) InitFromFile(filename string, debug bool) error {
-	e.InitLogger(debug)
+	logDebug = debug
 
-	log.Debugf("InitFromFile\n")
+	logDebugf("InitFromFile\n")
 
 	// Check file exists
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
