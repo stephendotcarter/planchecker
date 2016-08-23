@@ -1,5 +1,5 @@
 ---
 applications:
-- name: planchecker-dev
+- name: planchecker-green
   memory: 128M
   buildpack: go_buildpack
