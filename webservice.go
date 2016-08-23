@@ -294,6 +294,7 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 	indent += 1
 	//indentString := strings.Repeat(" ", indent * indentDepth)
 	indentPixels := indent * indentDepth * 10
+	colspan := 8
 
 	HTML := fmt.Sprintf("<tr><td style=\"padding-left:%dpx\">", indentPixels)
 
@@ -336,6 +337,7 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 		n.Rows)
 
 	if n.IsAnalyzed == true {
+		colspan = 13
 		if n.ActualRows > -1 {
 			HTML += fmt.Sprintf(
 				"<td class=\"text-right\">%.0f</td>"+
@@ -392,20 +394,20 @@ func RenderNodeHtml(n *plan.Node, indent int) string {
 	}
 
 	for _, s := range n.SubPlans {
-		HTML += RenderPlanHtml(s, indent)
+		HTML += RenderPlanHtml(s, indent, colspan)
 	}
 
 	return HTML
 }
 
 // Render plan for output to console
-func RenderPlanHtml(p *plan.Plan, indent int) string {
+func RenderPlanHtml(p *plan.Plan, indent int, colspan int) string {
 	HTML := ""
 	indent += 1
 	//indentString := strings.Repeat(" ", indent * indentDepth)
 	indentPixels := indent * indentDepth * 10
 
-	HTML += fmt.Sprintf("<tr><td style=\"padding-left:%dpx;\"><strong>%s</strong></td></tr>", indentPixels, p.Name)
+	HTML += fmt.Sprintf("<tr><td style=\"padding-left:%dpx;\"><strong>%s</strong></td><td colspan=\"%d\"></td></tr>", indentPixels, p.Name, colspan)
 	HTML += RenderNodeHtml(p.TopNode, indent)
 	return HTML
 }
