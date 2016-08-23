@@ -16,7 +16,7 @@ import (
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
-	"github.com/pivotal-gss/planchecker/plan"
+	"github.com/stephendotcarter/planchecker/plan"
 )
 
 // Database record
