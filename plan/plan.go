@@ -878,6 +878,12 @@ func (e *Explain) parseLines() error {
 	logDebugf("Parsing %d lines\n", len(e.lines))
 	e.planFinished = false
 
+	// Check every line for quotes.
+	// Easier to do it in one go here rather than multiple places in code.
+	for e.lineOffset = 0; e.lineOffset < len(e.lines); e.lineOffset++ {
+		e.lines[e.lineOffset] = checkQuote(e.lines[e.lineOffset])
+	}
+
 	var err error
 	// Loop through lines
 	for e.lineOffset = 0; e.lineOffset < len(e.lines); e.lineOffset++ {
@@ -892,9 +898,8 @@ func (e *Explain) parseLines() error {
 	return nil
 }
 
-// Parse each line
-func (e *Explain) parseline(line string) error {
-	// Check if line has doublequotes at start and end i.e. it was copied from pgAdmin output
+// Check for quotes
+func checkQuote(line string) string {
 	if len(line) > 2 {
 		if `"` == line[0:1] && `"` == line[len(line)-2:len(line)-1] {
 			// If so then remove the doublequotes and add an extra space
@@ -902,6 +907,12 @@ func (e *Explain) parseline(line string) error {
 			line = " " + line[1:len(line)-2]
 		}
 	}
+	return line
+}
+
+// Parse each line
+func (e *Explain) parseline(line string) error {
+	// Check if line has doublequotes at start and end i.e. it was copied from pgAdmin output
 
 	indent := getIndent(line)
 
