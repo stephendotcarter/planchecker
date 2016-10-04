@@ -29,25 +29,27 @@ type Node struct {
 	Width       int64
 
 	// Variables parsed from EXPLAIN ANALYZE
-	ActualRows   float64
-	AvgRows      float64
-	Workers      int64
-	MaxRows      float64
-	MaxSeg       string
-	Scans        int64
-	MsFirst      float64
-	MsEnd        float64
-	MsOffset     float64
-	MsNode       float64
-	MsPrct       float64
-	AvgMem       float64
-	MaxMem       float64
-	ExecMemLine  float64
-	SpillFile    int64
-	SpillReuse   int64
-	PartSelected int64
-	PartTotal    int64
-	Filter       string
+	ActualRows        float64
+	AvgRows           float64
+	Workers           int64
+	MaxRows           float64
+	MaxSeg            string
+	Scans             int64
+	MsFirst           float64
+	MsEnd             float64
+	MsOffset          float64
+	MsNode            float64
+	MsPrct            float64
+	AvgMem            float64
+	MaxMem            float64
+	ExecMemLine       float64
+	SpillFile         int64
+	SpillReuse        int64
+	PartSelected      int64
+	PartSelectedTotal int64
+	PartScanned       int64
+	PartScannedTotal  int64
+	Filter            string
 
 	// Contains all the text lines below each node
 	ExtraInfo []string
@@ -250,8 +252,10 @@ var (
 				}
 
 				// ORCA
+
+				// SELECTED
 				re = regexp.MustCompile(`Partition Selector`)
-				if re.MatchString(n.Operator) {
+				if re.MatchString(n.Operator) && n.PartSelected > -1 {
 					// Warn if selected partitions is great than 100
 					if n.PartSelected >= partitionThreshold {
 						n.Warnings = append(n.Warnings, Warning{
@@ -266,9 +270,33 @@ var (
 							"Review query"})
 						// Also warn if greater than 25% of total partitions were selected.
 						// I just chose 25% for now... may need to be adjusted to a more reasonable value
-					} else if (n.PartSelected * 100 / n.PartTotal) >= partitionPrctThreshold {
+					} else if (n.PartSelected * 100 / n.PartSelectedTotal) >= partitionPrctThreshold {
 						n.Warnings = append(n.Warnings, Warning{
-							fmt.Sprintf("%d%% (%d out of %d) partitions selected", (n.PartSelected * 100 / n.PartTotal), n.PartSelected, n.PartTotal),
+							fmt.Sprintf("%d%% (%d out of %d) partitions selected", (n.PartSelected * 100 / n.PartSelectedTotal), n.PartSelected, n.PartSelectedTotal),
+							"Check if partitions can be eliminated"})
+					}
+				}
+
+				// SCANNED
+				re = regexp.MustCompile(`Dynamic Table Scan`)
+				if re.MatchString(n.Operator) && n.PartScanned > -1 {
+					// Warn if scanned partitions is great than 100
+					if n.PartScanned >= partitionThreshold {
+						n.Warnings = append(n.Warnings, Warning{
+							fmt.Sprintf("Detected %d partition scans", n.PartScanned),
+							"Check if partitions can be eliminated"})
+					}
+
+					// Warn if scanned partitons is 0, may be an issue
+					if n.PartScanned == 0 {
+						n.Warnings = append(n.Warnings, Warning{
+							"Zero partitions scanned",
+							"Review query"})
+						// Also warn if greater than 25% of total partitions were scanned.
+						// I just chose 25% for now... may need to be adjusted to a more reasonable value
+					} else if (n.PartScanned * 100 / n.PartScannedTotal) >= partitionPrctThreshold {
+						n.Warnings = append(n.Warnings, Warning{
+							fmt.Sprintf("%d%% (%d out of %d) partitions scanned", (n.PartScanned * 100 / n.PartScannedTotal), n.PartScanned, n.PartScannedTotal),
 							"Check if partitions can be eliminated"})
 					}
 				}
@@ -547,7 +575,9 @@ func parseNodeExtraInfo(n *Node) error {
 	n.SpillFile = -1
 	n.SpillReuse = -1
 	n.PartSelected = -1
-	n.PartTotal = -1
+	n.PartSelectedTotal = -1
+	n.PartScanned = -1
+	n.PartScannedTotal = -1
 	n.Filter = ""
 	n.IsAnalyzed = false
 
@@ -708,9 +738,20 @@ func parseNodeExtraInfo(n *Node) error {
 		m = re.FindStringSubmatch(line)
 		if len(m) == re.NumSubexp()+1 {
 			n.PartSelected, _ = strconv.ParseInt(strings.TrimSpace(m[1]), 10, 64)
-			n.PartTotal, _ = strconv.ParseInt(strings.TrimSpace(m[2]), 10, 64)
-			logDebugf("PartTotal %d\n", n.PartTotal)
+			n.PartSelectedTotal, _ = strconv.ParseInt(strings.TrimSpace(m[2]), 10, 64)
+			logDebugf("PartSelectedTotal %d\n", n.PartSelectedTotal)
 			logDebugf("PartSelected %d\n", n.PartSelected)
+		}
+
+		// PARTITION SCANNED
+		re = regexp.MustCompile(`Partitions scanned:  (Avg ){0,}(.*) \(out of (\d+)\)`)
+		m = re.FindStringSubmatch(line)
+		if len(m) > 0 {
+			partScannedFloat, _ := strconv.ParseFloat(strings.TrimSpace(m[len(m)-2]), 64)
+			n.PartScanned = int64(partScannedFloat)
+			n.PartScannedTotal, _ = strconv.ParseInt(strings.TrimSpace(m[len(m)-1]), 10, 64)
+			logDebugf("PartScannedTotal %d\n", n.PartScannedTotal)
+			logDebugf("PartScanned %d\n", n.PartScanned)
 		}
 
 		// FILTER
