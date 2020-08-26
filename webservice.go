@@ -10,7 +10,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 
@@ -247,7 +246,7 @@ func PlanPostHandler(w http.ResponseWriter, r *http.Request) {
 		// Insert into database
 		planRecord, err = InsertPlan(string(planTextDecoded))
 		if err != nil {
-			fmt.Fprintf(w, "{\"status\":\"failure\"}")
+			fmt.Fprintf(w, fmt.Sprintf("{\"status\":\"failure\",\"msg\":\"%s\"}", err.Error()))
 		} else {
 			fmt.Fprintf(w, "{\"status\":\"success\",\"ref\":\"%s\"}", planRecord.Ref)
 		}

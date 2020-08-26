@@ -17,7 +17,7 @@ function savePlan(){
             $('#bookmarkMsg').removeClass('hidden');
             $('#planSave').addClass('hidden');
         } else if (res.status == "failure") {
-            alert("Oops...");
+            alert(res.msg);
         }
 
         // Remove spinner
