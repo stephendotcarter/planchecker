@@ -36,9 +36,6 @@ var (
 
 	// Database constring
 	dbconnstring string
-
-	// Display this when running on dev instance
-	testPlan string
 )
 
 // Generate random string
@@ -177,14 +174,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	// Get list of checks from planchecker
 	checklistHtml := GenerateChecklistHtml()
 
-	// If we're not running in dev or local set testPlan to empty string
-	re := regexp.MustCompile(`-dev`)
-	fmt.Println(r.Host)
-	if re.MatchString(r.Host) == false && r.Host != "localhost:8080" {
-		testPlan = ""
-	}
-
-	pageHtml = fmt.Sprintf(pageHtml, testPlan, checklistHtml)
+	pageHtml = fmt.Sprintf(pageHtml, checklistHtml)
 
 	// Print the response
 	fmt.Fprintf(w, pageHtml)
@@ -513,23 +503,6 @@ func main() {
 		fmt.Println("CONSTRING env variable not set")
 		os.Exit(0)
 	}
-	fmt.Printf("Database %s\n", dbconnstring)
-
-	// Read testdata in to memory
-	testPlanFilename := "testdata/explain16.txt"
-	if _, err := os.Stat(testPlanFilename); os.IsNotExist(err) {
-		fmt.Printf("Could not find \"%s\"\n", testPlanFilename)
-		os.Exit(0)
-	}
-
-	// Read all lines
-	filedata, err := ioutil.ReadFile(testPlanFilename)
-	if err != nil {
-		fmt.Printf("Could not load \"%s\"\n", testPlanFilename)
-		os.Exit(0)
-	}
-
-	testPlan = string(filedata)
 
 	// Using gorilla/mux as it provides named URL variable parsing
 	r := mux.NewRouter()
