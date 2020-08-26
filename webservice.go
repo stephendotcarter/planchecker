@@ -79,6 +79,10 @@ func SelectPlan(ref string) (PlanRecord, error) {
 	var planRecord PlanRecord
 	var err error
 
+	if dbconnstring == "" {
+		return planRecord, errors.New("No database configured")
+	}
+
 	// Open connection to DB
 	dbconn, err := OpenDb()
 	if err != nil {
@@ -115,6 +119,10 @@ func SelectPlan(ref string) (PlanRecord, error) {
 func InsertPlan(planText string) (PlanRecord, error) {
 	var planRecord PlanRecord
 	var err error
+
+	if dbconnstring == "" {
+		return planRecord, errors.New("No database configured")
+	}
 
 	// Open connection to DB
 	dbconn, err := OpenDb()
@@ -500,8 +508,7 @@ func main() {
 
 	dbconnstring = os.Getenv("CONSTRING")
 	if dbconnstring == "" {
-		fmt.Println("CONSTRING env variable not set")
-		os.Exit(0)
+		fmt.Println("CONSTRING env variable not set. No database configured")
 	}
 
 	// Using gorilla/mux as it provides named URL variable parsing
