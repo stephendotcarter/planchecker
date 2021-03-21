@@ -48,3 +48,8 @@ Then browse to:
 ```
 http://localhost:8000
 ```
+
+## Docker
+```
+docker build -t stephendotcarter/planchecker:latest .
+```
